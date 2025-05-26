@@ -1,0 +1,12 @@
+requests
+openai-whisper
+sounddevice
+numpy
+getch
+soundfile
+scipy
+TTS
+pyserial
+transformers
+torch
+librosa
