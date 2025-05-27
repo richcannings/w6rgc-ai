@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# wake_word_detector.py - Advanced wake word detection for ham radio AI assistant
+# wake_word_detector.py - AST-based wake word detection for ham radio AI assistant
 #
-# This module provides dual wake word detection methods for the W6RGC/AI system:
+# This module provides efficient wake word detection for the W6RGC/AI system using
+# MIT's AST (Audio Spectrogram Transformer) model for fast, accurate detection.
 #
-# 1. AST Method (Recommended for efficiency):
+# AST Method Features:
 #    - Uses MIT/ast-finetuned-speech-commands-v2 model
 #    - 35+ pre-trained wake words available
 #    - Very fast, low CPU usage, high accuracy
@@ -11,12 +12,6 @@
 #    - Available words: backward, bed, bird, cat, dog, down, eight, five, follow, 
 #      forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, 
 #      one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
-#
-# 2. Custom Method (Flexible):
-#    - Uses energy detection + Whisper verification
-#    - Can detect any custom phrase
-#    - Higher CPU usage but more flexible
-#    - Current default: "Overlord"
 #
 # Features:
 #  - Automatic sample rate conversion (48kHz device → 16kHz model)
@@ -40,15 +35,11 @@ from constants import (
     AST_CONFIDENCE_THRESHOLD,
     AST_CHUNK_LENGTH_S,
     AST_MODEL_NAME,
-    CUSTOM_WAKE_PHRASE,
-    CUSTOM_ENERGY_THRESHOLD,
-    CUSTOM_SILENCE_DURATION,
     DEFAULT_DEVICE_SAMPLE_RATE,
     WHISPER_TARGET_SAMPLE_RATE,
     CUDA_DEVICE,
     CPU_DEVICE,
     WAKE_WORD_METHOD_AST,
-    WAKE_WORD_METHOD_CUSTOM,
     AUDIO_FRAME_MS
 )
 
@@ -162,150 +153,32 @@ class ASTWakeWordDetector:
             print(f"❌ Error in wake word detection: {e}")
             return False
 
-class CustomWakeWordDetector:
-    """
-    Custom wake word detector using energy detection + Whisper verification.
-    This is more flexible for custom wake words like "Overlord" that aren't
-    in the AST model's vocabulary.
-    """
-    
-    def __init__(self, 
-                 wake_phrase: str = CUSTOM_WAKE_PHRASE,
-                 energy_threshold: float = CUSTOM_ENERGY_THRESHOLD,
-                 silence_duration: float = CUSTOM_SILENCE_DURATION,
-                 device_sample_rate: int = DEFAULT_DEVICE_SAMPLE_RATE):
-        """
-        Initialize custom wake word detector.
-        
-        Args:
-            wake_phrase: The phrase to detect (will use Whisper for verification)
-            energy_threshold: Voice activity detection threshold
-            silence_duration: Seconds of silence to end recording
-            device_sample_rate: Sample rate of the audio device
-        """
-        self.wake_phrase = wake_phrase.lower()
-        self.energy_threshold = energy_threshold
-        self.silence_duration = silence_duration
-        self.device_sample_rate = device_sample_rate
-        
-        # Load a small, fast Whisper model for verification
-        import whisper
-        print("Loading lightweight Whisper model for wake word verification...")
-        self.whisper_model = whisper.load_model("tiny")
-        print(f"Custom wake word detector ready for: '{wake_phrase}'")
-    
-    def listen_for_wake_word(self, 
-                           audio_device_index: int, 
-                           samplerate: int = None,  # For compatibility
-                           debug: bool = False) -> Tuple[bool, Optional[str]]:
-        """
-        Listen for wake word using energy detection + Whisper verification.
-        
-        Returns:
-            (wake_word_detected, transcribed_text)
-        """
-        # Use device sample rate if not specified
-        if samplerate is None:
-            samplerate = self.device_sample_rate
-            
-        print(f"🎤 Listening for wake phrase '{self.wake_phrase}'...")
-        
-        recording = []
-        speech_started = False
-        silence_counter = 0
-        frame_duration = 0.1  # 100ms frames
-        
-        with sd.InputStream(samplerate=samplerate, channels=1, 
-                          device=audio_device_index, dtype='float32') as stream:
-            
-            while True:
-                frame, _ = stream.read(int(frame_duration * samplerate))
-                frame = np.squeeze(frame)
-                amplitude = np.max(np.abs(frame))
-                
-                if amplitude > self.energy_threshold:
-                    if not speech_started:
-                        if debug:
-                            print("🗣️  Speech detected, recording...")
-                        speech_started = True
-                    recording.append(frame)
-                    silence_counter = 0
-                    
-                elif speech_started:
-                    recording.append(frame)
-                    silence_counter += frame_duration
-                    
-                    if silence_counter >= self.silence_duration:
-                        if debug:
-                            print("🔇 Silence detected, processing audio...")
-                        break
-        
-        if not recording:
-            return False, None
-        
-        # Convert recording to format for Whisper
-        audio_data = np.concatenate(recording)
-        
-        # Resample to 16kHz for Whisper if needed
-        if samplerate != 16000:
-            audio_data = librosa.resample(audio_data, orig_sr=samplerate, target_sr=16000)
-        
-        audio_data = audio_data.astype(np.float32) # Ensure correct dtype
-        
-        # Transcribe with Whisper
-        if debug:
-            print("Verifying with Whisper...")
-        result = self.whisper_model.transcribe(audio_data, fp16=torch.cuda.is_available(), language='en')
-        transcribed_text = result['text'].strip().lower()
-        
-        if debug:
-            print(f"Whisper transcription: '{transcribed_text}'")
-            
-        if self.wake_phrase in transcribed_text:
-            print(f"🎯 Custom wake phrase '{self.wake_phrase}' confirmed by Whisper!")
-            return True, result['text'].strip() # Return original case for initial text
-        else:
-            if debug:
-                print(f"Custom wake phrase '{self.wake_phrase}' not found in '{transcribed_text}'")
-            return False, None
-
-def create_wake_word_detector(method: str = "ast", device_sample_rate: int = 44100, **kwargs) -> object:
+def create_wake_word_detector(method: str = WAKE_WORD_METHOD_AST, device_sample_rate: int = DEFAULT_DEVICE_SAMPLE_RATE, **kwargs) -> ASTWakeWordDetector:
     """
     Factory function to create a wake word detector instance.
     
     Args:
-        method: "ast" or "custom"
+        method: Must be "ast" (only supported method)
         device_sample_rate: Sample rate of the audio input device.
-        **kwargs: Additional arguments for specific detectors 
-                  (e.g., wake_word for AST, wake_phrase for Custom).
+        **kwargs: Additional arguments for the AST detector 
+                  (e.g., wake_word, confidence_threshold).
     
     Returns:
-        An instance of ASTWakeWordDetector or CustomWakeWordDetector.
+        An instance of ASTWakeWordDetector.
     """
-    if method.lower() == "ast":
+    if method.lower() == WAKE_WORD_METHOD_AST:
         # AST specific defaults if not provided in kwargs
-        ast_wake_word = kwargs.get('wake_word', "seven")
-        ast_confidence = kwargs.get('confidence_threshold', 0.7)
+        ast_wake_word = kwargs.get('wake_word', DEFAULT_WAKE_WORD)
+        ast_confidence = kwargs.get('confidence_threshold', AST_CONFIDENCE_THRESHOLD)
         return ASTWakeWordDetector(
             wake_word=ast_wake_word,
             confidence_threshold=ast_confidence,
             device_sample_rate=device_sample_rate
         )
-    elif method.lower() == "custom":
-        # Custom specific defaults if not provided in kwargs
-        custom_wake_phrase = kwargs.get('wake_phrase', "Overlord") # Default if not passed
-        custom_energy_threshold = kwargs.get('energy_threshold', 0.02)
-        custom_silence_duration = kwargs.get('silence_duration', 1.5)
-        return CustomWakeWordDetector(
-            wake_phrase=custom_wake_phrase,
-            energy_threshold=custom_energy_threshold,
-            silence_duration=custom_silence_duration,
-            device_sample_rate=device_sample_rate
-        )
     else:
-        raise ValueError(f"Unknown wake word detection method: {method}")
+        raise ValueError(f"Unsupported wake word detection method: {method}. Only 'ast' is supported.")
 
-# Test functions for debugging
+# Test function for debugging
 def test_ast_detector(audio_device_index: int = None):
     """Test the AST-based wake word detector"""
     if audio_device_index is None:
@@ -319,9 +192,9 @@ def test_ast_detector(audio_device_index: int = None):
             print("❌ No input audio device found")
             return
     
-    detector = create_wake_word_detector("ast")
+    detector = create_wake_word_detector(WAKE_WORD_METHOD_AST)
     
-    print("Say 'seven' to test the AST wake word detector...")
+    print(f"Say '{DEFAULT_WAKE_WORD}' to test the AST wake word detector...")
     print("Press Ctrl+C to stop")
     
     detected = detector.listen_for_wake_word(audio_device_index, debug=True)
@@ -330,44 +203,9 @@ def test_ast_detector(audio_device_index: int = None):
     else:
         print("❌ Wake word detection failed or interrupted")
 
-def test_custom_detector(audio_device_index: int = None):
-    """Test the custom wake word detector"""
-    if audio_device_index is None:
-        # Try to find a working audio device
-        devices = sd.query_devices()
-        for i, device in enumerate(devices):
-            if device['max_input_channels'] > 0:
-                audio_device_index = i
-                break
-        if audio_device_index is None:
-            print("❌ No input audio device found")
-            return
-    
-    detector = create_wake_word_detector("custom")
-    
-    print(f"Say 'Overlord' to test the custom wake word detector...")
-    print("Press Ctrl+C to stop")
-    
-    try:
-        detected, text = detector.listen_for_wake_word(audio_device_index, debug=True)
-        if detected:
-            print(f"✅ Wake word detection successful! Heard: '{text}'")
-        else:
-            print(f"❌ Wake word not detected. Heard: '{text}'")
-    except KeyboardInterrupt:
-        print("\n⏹️  Test stopped by user")
-
 if __name__ == "__main__":
     # Simple test script
-    print("Wake Word Detector Test")
-    print("1. AST method (say 'seven')")
-    print("2. Custom method (say 'Overlord')")
+    print("AST Wake Word Detector Test")
+    print(f"Say '{DEFAULT_WAKE_WORD}' to test the detector...")
     
-    choice = input("Choose method (1 or 2): ").strip()
-    
-    if choice == "1":
-        test_ast_detector()
-    elif choice == "2":
-        test_custom_detector()
-    else:
-        print("Invalid choice") 
+    test_ast_detector() 

@@ -6,9 +6,9 @@ Assuming that "AI is the new electricity". Some day we will need a backup AI sys
 
 This experiment implements an AI backup in the form a voice assistant over ham radio and running solely on local models. Thus, not requiring the Internet. 
 
-W6RGC-AI is a Python-based voice assistant designed for amateur radio operators. It uses advanced wake word detection, speech-to-text, a large language model (LLM), and text-to-speech to provide a conversational AI experience, integrated with ham radio operations, including PTT (Push-to-Talk) control via a serial interface (e.g., for the [AIOC adapter](https://github.com/skuep/AIOC)).
+W6RGC-AI is a Python-based voice assistant designed for amateur radio operators. It uses efficient AST-based wake word detection, speech-to-text, a large language model (LLM), and text-to-speech to provide a conversational AI experience, integrated with ham radio operations, including PTT (Push-to-Talk) control via a serial interface (e.g., for the [AIOC adapter](https://github.com/skuep/AIOC)).
 
-The assistant features dual wake word detection methods and listens for configurable wake words before processing commands or queries, making it suitable for hands-free operation in a radio shack environment.
+The assistant listens for the configurable wake word "seven" (from 35+ available options) before processing commands or queries, making it suitable for hands-free operation in a radio shack environment.
 
 ## Purpose
 
@@ -30,7 +30,7 @@ One example (and my next project) is "Voice APRS" with the features to:
 
 ## Features
 
-*   **Advanced Wake Word Detection:** Dual detection methods using MIT's AST model and custom Whisper-based detection
+*   **Efficient Wake Word Detection:** Uses MIT's AST (Audio Spectrogram Transformer) model for fast, accurate detection
 *   **Conversational AI:** Leverages Ollama with models like Gemma3 to understand and respond to user speech
 *   **High-Quality Speech Recognition:** Utilizes OpenAI Whisper for accurate transcription of spoken audio
 *   **Natural Text-to-Speech:** Employs CoquiTTS for generating spoken responses with CUDA acceleration
@@ -51,22 +51,24 @@ The system is organized into several key modules:
 - **`constants.py`**: Centralized configuration management for all settings
 - **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
 - **`prompts.py`**: AI persona and conversation management (class-based)
-- **`wake_word_detector.py`**: Dual wake word detection system
+- **`wake_word_detector.py`**: AST-based wake word detection system
 - **`test_tts_performance.py`**: Performance testing and optimization tools
 
 ## Wake Word Detection
 
-The system supports two wake word detection methods:
+The system uses MIT's AST (Audio Spectrogram Transformer) model for efficient wake word detection:
 
-- **AST Method:** Uses MIT's pre-trained model with 35+ available wake words (currently "seven")
-- **Custom Method:** Uses Whisper for flexible custom phrases (currently "Overlord")
+- **35+ Available Wake Words:** backward, bed, bird, cat, dog, down, eight, five, follow, forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
+- **Current Default:** "seven" (optimized for ham radio use)
+- **High Performance:** Very fast, low CPU usage, high accuracy
+- **CUDA Support:** GPU acceleration when available
 
-The default configuration uses the AST method for efficiency. To change methods or wake words, modify the settings in `constants.py`.
+To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of the supported words.
 
 ## Technologies Used
 
 *   **Python 3**
-*   **Wake Word Detection:** MIT AST (Audio Spectrogram Transformer) + Custom Whisper-based detection
+*   **Wake Word Detection:** MIT AST (Audio Spectrogram Transformer)
 *   **Speech-to-Text:** [OpenAI Whisper](https://openai.com/research/whisper)
 *   **Large Language Model Engine:** [Ollama](https://ollama.ai/) (e.g., Gemma3 models)
 *   **Text-to-Speech:** [CoquiTTS](https://github.com/coqui-ai/TTS)
@@ -127,7 +129,7 @@ The default configuration uses the AST method for efficiency. To change methods 
 1.  **Configure the application:**
     *   **Primary Configuration**: Edit `constants.py` to modify all application settings:
       - Audio processing parameters (thresholds, sample rates)
-      - Wake word detection settings
+      - Wake word selection (choose from 35+ available words)
       - Hardware configuration (serial ports)
       - AI/LLM settings (Ollama URL, model selection)
       - TTS configuration (models, audio settings)
@@ -142,8 +144,7 @@ The default configuration uses the AST method for efficiency. To change methods 
 
 3.  **Operation:**
     *   The application will start listening for the wake word
-    *   **AST Method:** Say "seven" followed by your command
-    *   **Custom Method:** Say "Overlord" followed by your command
+    *   Say "seven" (or your configured wake word) followed by your command
     *   Example: "Seven, what is the current UTC time?"
     *   To terminate: "Seven, break" or "Seven, exit" or use Ctrl+C
 
@@ -168,9 +169,9 @@ DEFAULT_MODEL = "gemma3:12b"    # Ollama model to use
 
 ### Wake Word Detection
 ```python
-DEFAULT_WAKE_WORD = "seven"     # AST wake word
-CUSTOM_WAKE_PHRASE = "Overlord" # Custom wake phrase
-DEFAULT_WAKE_WORD_METHOD = "ast" # Detection method: "ast" or "custom"
+DEFAULT_WAKE_WORD = "seven"     # AST wake word (choose from 35+ options)
+AST_CONFIDENCE_THRESHOLD = 0.7  # Detection confidence threshold
+WAKE_WORD_METHOD_AST = "ast"    # Detection method
 ```
 
 ### Hardware Configuration
@@ -205,7 +206,7 @@ TTS_MODEL_TACOTRON2 = "tts_models/en/ljspeech/tacotron2-DDC"   # Fallback model
 The project includes several testing utilities:
 
 - **`test_tts_performance.py`**: Performance testing for TTS models
-- **Wake word testing**: Built-in debug modes in wake word detectors
+- **Wake word testing**: Built-in debug modes in wake word detector
 - **Module testing**: Each module includes `if __name__ == "__main__"` test sections
 
 To test individual components:
@@ -218,7 +219,8 @@ python wake_word_detector.py      # Test wake word detection
 
 ## Troubleshooting
 
-*   **Wake word not detected:** Try adjusting `AUDIO_THRESHOLD` in `constants.py` or test with wake word detector debug mode
+*   **Wake word not detected:** Try adjusting `AUDIO_THRESHOLD` or `AST_CONFIDENCE_THRESHOLD` in `constants.py`, or test with wake word detector debug mode
+*   **Wrong wake word detected:** Choose a different wake word from the 35+ available options in `constants.py`
 *   **Serial port errors:** Ensure user is in `dialout` group and device is connected
 *   **Audio device not found:** Check USB connections and run `python -c "import sounddevice; print(sounddevice.query_devices())"`
 *   **CUDA errors:** Install appropriate PyTorch version for your CUDA version

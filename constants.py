@@ -42,14 +42,8 @@ AST_CONFIDENCE_THRESHOLD = 0.7
 AST_CHUNK_LENGTH_S = 1.0
 AST_MODEL_NAME = "MIT/ast-finetuned-speech-commands-v2"
 
-# Custom Wake Word Detection
-CUSTOM_WAKE_PHRASE = "Overlord"
-CUSTOM_ENERGY_THRESHOLD = 0.02
-CUSTOM_SILENCE_DURATION = 1.5
-
-# Wake Word Detection Methods
+# Wake Word Detection Method
 WAKE_WORD_METHOD_AST = "ast"
-WAKE_WORD_METHOD_CUSTOM = "custom"
 DEFAULT_WAKE_WORD_METHOD = WAKE_WORD_METHOD_AST
 
 # ============================================================================

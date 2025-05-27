@@ -1,7 +1,32 @@
 #!/usr/bin/env python3
-# main.py - an AI voice assistant for ham radio
+# main.py - Ham Radio AI Voice Assistant
 #
-# Author: Rich Cannings, W6RGC, rcannings@gmail.com
+# This is the main entry point for the W6RGC/AI Ham Radio Voice Assistant.
+# It integrates wake word detection, speech recognition, AI conversation,
+# and text-to-speech for a complete voice assistant experience over ham radio.
+#
+# Key Features:
+#  - AST-based wake word detection: "seven" (from 35+ available options)
+#  - Whisper speech recognition for accurate transcription
+#  - Ollama LLM integration for conversational AI
+#  - CoquiTTS for natural-sounding speech synthesis
+#  - AIOC adapter support for PTT control
+#  - Automatic audio device detection and configuration
+#  - Centralized configuration through constants.py
+#
+# Hardware Requirements:
+#  - AIOC (All-In-One-Cable) adapter or compatible USB audio interface
+#  - Serial port for PTT control (typically /dev/ttyACM0)
+#  - Microphone and speakers/headphones
+#  - Optional: CUDA-capable GPU for acceleration
+#
+# Usage:
+#  1. Say the wake word "seven" (or configured alternative)
+#  2. Speak your command or question
+#  3. The AI will respond via TTS and transmit over radio
+#  4. Say "seven, break" or "seven, exit" to shutdown
+#
+# Author: Rich Cannings, W6RGC
 # Copyright 2025 Rich Cannings
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,8 +53,7 @@
 #  - Sample rate conversion (48kHz device → 16kHz model requirements)
 #
 # Current Configuration:
-#  - AST wake word: "seven" (recommended for efficiency)
-#  - Custom wake word: "Overlord" (for flexibility)
+#  - AST wake word: "seven" (from 35+ available options)
 #  - Bot name: "7" (configurable in prompts.py)
 #  - Audio device: Auto-detected AIOC adapter
 #  - Serial port: Auto-detected or manually set to /dev/ttyACM0 or /dev/ttyACM1
@@ -78,9 +102,7 @@ from constants import (
     DEFAULT_SERIAL_PORT,
     
     # Wake word detection
-    DEFAULT_WAKE_WORD_METHOD,
     WAKE_WORD_METHOD_AST,
-    WAKE_WORD_METHOD_CUSTOM,
     DEFAULT_WAKE_WORD
 )
 
@@ -268,26 +290,6 @@ except Exception as e:
     print(f"[CRITICAL ERROR] An unexpected error occurred during AIOC RIL initialization: {e}")
     exit()
 
-# audio_index will be determined automatically by find_aioc_device_index() # Old comment
-# Find and set up microphone and output device for AIOC adapter # Old comment
-# audio_index = find_aioc_device_index() # Removed
-# device_info = sd.query_devices(audio_index) # Removed, info in RIL
-# samplerate = int(device_info['default_samplerate']) # Removed, info in RIL
-# channels = 1 # TODO: query the device for the number of channels # Removed, info in RIL
-
-# Set up serial port for AIOC adapter # Old comment
-# One can find the AIOC adapter by running "ls /dev/ttyACM*" for the com port, # Old comment
-# and "aplay -l" for the audio device index. # Old comment
-# serial_port = "/dev/ttyACM0" # TODO: query the operating system for the serial port # Removed
-# try: # Removed
-#     ser = serial.Serial(serial_port, timeout=1)  # Open serial port (adjust baud rate if needed) # Removed
-#     print("Serial port opened successfully.") # Removed
-#     ser.setRTS(False) # Removed
-#     ser.setDTR(False) # Removed
-# except Exception as e: # Removed
-#     print(f"[ERROR] Failed to open serial port: {e}") # Removed
-#     exit() # Removed
-
 # Initialize PromptManager
 prompt_mgr = PromptManager() # Initialize the prompt manager
 
@@ -323,32 +325,15 @@ if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthes
 
 ### MAIN LOOP ###
 
-# Initialize wake word detector (choose method)
-# Option 1: Use "seven" with AST classification model (most efficient)
-# Option 2: Use "Overlord" with custom detector (more flexible)
-
-# Choose detection method: "ast" or "custom"
-chosen_method = DEFAULT_WAKE_WORD_METHOD # Default to AST
-# chosen_method = WAKE_WORD_METHOD_CUSTOM # Uncomment to use custom wake word
-
-if chosen_method == WAKE_WORD_METHOD_AST:
-    wake_detector = wake_word_detector.create_wake_word_detector(
-        method=WAKE_WORD_METHOD_AST, 
-        device_sample_rate=samplerate,
-        wake_word=DEFAULT_WAKE_WORD # Explicitly set AST wake word
-    )
-elif chosen_method == WAKE_WORD_METHOD_CUSTOM:
-    wake_detector = wake_word_detector.create_wake_word_detector(
-        method=WAKE_WORD_METHOD_CUSTOM, 
-        device_sample_rate=samplerate,
-        wake_phrase=prompt_mgr.get_bot_name() # Pass bot name for custom wake phrase
-    )
-else:
-    print(f"[ERROR] Invalid wake_detector method specified: {chosen_method}. Exiting.")
-    exit()
+# Initialize wake word detector using AST method
+wake_detector = wake_word_detector.create_wake_word_detector(
+    method=WAKE_WORD_METHOD_AST, 
+    device_sample_rate=samplerate,
+    wake_word=DEFAULT_WAKE_WORD
+)
 
 print("🚀 Ham Radio AI Assistant starting up...")
-print(f"Wake word detector: Ready (Method: {chosen_method})")
+print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper {model}")
 print(f"Text-to-speech: CoquiTTS")
 print(f"AI model: {DEFAULT_MODEL}")
@@ -357,59 +342,20 @@ print("=" * 50)
 while True:
     try:
         # Step 1: Wait for wake word detection
-        print("\n🎤 Listening for wake word...")
+        print(f"\n🎤 Listening for wake word '{DEFAULT_WAKE_WORD}'...")
         
-        if isinstance(wake_detector, wake_word_detector.CustomWakeWordDetector):
-            # Custom detector returns (detected, transcribed_text)
-            wake_detected, initial_text = wake_detector.listen_for_wake_word(
-                audio_device_index=audio_index, # Still need audio_index for wake_word_detector
-                samplerate=samplerate,
-                debug=False
-            )
-            
-            if not wake_detected:
-                print("❌ Wake word not detected, continuing to listen...")
-                continue
-                
-            print(f"✅ Wake word detected! Initial transcription: '{initial_text}'")
-            
-            # Check if this was just the wake word or includes a command
-            if len(initial_text.split()) > 1:
-                # Likely includes command after wake word
-                operator_text = initial_text
-                print("📝 Using initial transcription as full command")
-            else:
-                # Just wake word, need to get the actual command
-                print("🎤 Wake word detected, now listening for your command...")
-                operator_text = get_full_command_after_wake_word(aioc_ril, model)
-                
-        elif isinstance(wake_detector, wake_word_detector.ASTWakeWordDetector):
-            # AST detector just returns boolean
-            wake_detected = wake_detector.listen_for_wake_word(
-                audio_device_index=audio_index, # Still need audio_index for wake_word_detector
-                debug=False
-            )
-            
-            if not wake_detected:
-                print("❌ Wake word not detected, continuing to listen...")
-                continue
-                
-            print("✅ Wake word 'seven' detected! Now listening for your command...")
-            operator_text = get_full_command_after_wake_word(aioc_ril, model)
+        # AST detector returns boolean
+        wake_detected = wake_detector.listen_for_wake_word(
+            audio_device_index=audio_index,
+            debug=False
+        )
         
-        else:
-            # Fallback for other detector types
-            wake_detected = wake_detector.listen_for_wake_word(
-                audio_device_index=audio_index, # Still need audio_index for wake_word_detector
-                debug=False
-            )
+        if not wake_detected:
+            print("❌ Wake word not detected, continuing to listen...")
+            continue
             
-            if not wake_detected:
-                print("❌ Wake word not detected, continuing to listen...")
-                continue
-                
-            print("✅ Wake word detected! Now listening for your command...")
-            operator_text = get_full_command_after_wake_word(aioc_ril, model)
+        print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
+        operator_text = get_full_command_after_wake_word(aioc_ril, model)
         
         # Step 2: Process the command
 
@@ -454,5 +400,4 @@ while True:
         continue
 
 print("🏁 Ham Radio AI Assistant shutdown complete.")
-# ser.close() # Replaced with RIL close
 aioc_ril.close() # Close the RIL (which closes serial conn)
