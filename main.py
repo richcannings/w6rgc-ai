@@ -76,6 +76,7 @@ from prompts import PromptManager
 import commands # Import the new commands module
 
 from ril_aioc import RadioInterfaceLayerAIOC # New import
+from ril_digirig import RadioInterfaceLayerDigiRig # New import for Digirig
 from periodically_identify import PeriodicIdentifier # New import for periodic ID
 
 ### CONSTANTS ###
@@ -102,6 +103,9 @@ from constants import (
     
     # Hardware configuration
     DEFAULT_SERIAL_PORT,
+    RIL_TYPE_AIOC,
+    RIL_TYPE_DIGIRIG,
+    DEFAULT_RIL_TYPE,
     
     # Wake word detection
     WAKE_WORD_METHOD_AST,
@@ -109,6 +113,30 @@ from constants import (
 )
 
 ### HELPER FUNCTIONS ###
+
+def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=DEFAULT_SERIAL_PORT):
+    """
+    Factory function to create the appropriate Radio Interface Layer instance.
+    
+    Args:
+        ril_type (str): Type of RIL to create ("aioc" or "digirig")
+        serial_port_name (str): Serial port for PTT control
+        
+    Returns:
+        RadioInterfaceLayer instance (AIOC or Digirig)
+        
+    Raises:
+        ValueError: If ril_type is not supported
+        RuntimeError: If RIL initialization fails
+    """
+    if ril_type.lower() == RIL_TYPE_AIOC:
+        print(f"🔧 Initializing AIOC Radio Interface Layer...")
+        return RadioInterfaceLayerAIOC(serial_port_name=serial_port_name)
+    elif ril_type.lower() == RIL_TYPE_DIGIRIG:
+        print(f"🔧 Initializing Digirig Radio Interface Layer...")
+        return RadioInterfaceLayerDigiRig(serial_port_name=serial_port_name)
+    else:
+        raise ValueError(f"Unsupported RIL type: {ril_type}. Supported types: {RIL_TYPE_AIOC}, {RIL_TYPE_DIGIRIG}")
 
 def convert_ollama_response(response_text):
     try:
@@ -275,21 +303,27 @@ def get_full_command_after_wake_word(aioc_interface, model):
 
 ### INITIALIZATION ###
 
-## AIOC adapter setup
-# Initialize RadioInterfaceLayerAIOC
+## Radio Interface Layer setup
+# Initialize the appropriate Radio Interface Layer based on configuration
 try:
-    aioc_ril = RadioInterfaceLayerAIOC(serial_port_name=DEFAULT_SERIAL_PORT) # Or make configurable
-    # Get necessary info from the RIL instance
-    audio_index = aioc_ril.get_audio_device_index()
-    samplerate = aioc_ril.get_samplerate()
-    channels = aioc_ril.get_channels()
-    # serial_conn is now managed by aioc_ril, no 'ser' variable here
+    print(f"🔧 Selected RIL type: {DEFAULT_RIL_TYPE.upper()}")
+    ril = create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=DEFAULT_SERIAL_PORT)
+    
+    # Get necessary info from the RIL instance (same interface for both AIOC and Digirig)
+    audio_index = ril.get_audio_device_index()
+    samplerate = ril.get_samplerate()
+    channels = ril.get_channels()
+    # serial_conn is now managed by the RIL instance
+except ValueError as e:
+    print(f"[CONFIGURATION ERROR] {e}")
+    print(f"Please check the DEFAULT_RIL_TYPE setting in constants.py")
+    exit()
 except RuntimeError as e:
-    print(f"[CRITICAL ERROR] Could not initialize AIOC Radio Interface Layer: {e}")
-    print("The application cannot continue without the AIOC. Please check connections and configurations.")
+    print(f"[CRITICAL ERROR] Could not initialize {DEFAULT_RIL_TYPE.upper()} Radio Interface Layer: {e}")
+    print("The application cannot continue without the radio interface. Please check connections and configurations.")
     exit()
 except Exception as e:
-    print(f"[CRITICAL ERROR] An unexpected error occurred during AIOC RIL initialization: {e}")
+    print(f"[CRITICAL ERROR] An unexpected error occurred during RIL initialization: {e}")
     exit()
 
 # Initialize PromptManager
@@ -337,7 +371,7 @@ wake_detector = wake_word_detector.create_wake_word_detector(
 # Initialize periodic identifier
 periodic_identifier = PeriodicIdentifier(
     tts_engine=coqui_tts_engine,
-    aioc_interface=aioc_ril,
+    aioc_interface=ril,
     play_tts_function=play_tts_audio  # Use the file-based method for reliability
 )
 
@@ -367,7 +401,7 @@ while True:
             continue
             
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
-        operator_text = get_full_command_after_wake_word(aioc_ril, model)
+        operator_text = get_full_command_after_wake_word(ril, model)
         
         # Step 2: Process the command
 
@@ -382,23 +416,23 @@ while True:
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")
             play_tts_audio(f"Terminating. Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down my " +
-                           "processes. I am clear. Seven three.", coqui_tts_engine, aioc_ril)
+                           "processes. I am clear. Seven three.", coqui_tts_engine, ril)
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
             status_report = f"I am {prompt_mgr.get_bot_name()}. I am currently using the {DEFAULT_MODEL} large language model for intelligence and operating offline."
-            play_tts_audio(status_report, coqui_tts_engine, aioc_ril)
+            play_tts_audio(status_report, coqui_tts_engine, ril)
             continue
         elif command_type == "reset":
             print("🔄 Reset command identified by main.py. Resetting context.")
             prompt_mgr.reset_context()
             play_tts_audio("My context has been reset. I am ready for a new conversation.", 
-                           coqui_tts_engine, aioc_ril)
+                           coqui_tts_engine, ril)
             continue
         elif command_type == "identify":
             print("🆔 Identify command identified by main.py.")
             identify_response = f"This is {prompt_mgr.get_bot_phonetic_callsign()}."
-            play_tts_audio(identify_response, coqui_tts_engine, aioc_ril)
+            play_tts_audio(identify_response, coqui_tts_engine, ril)
             continue
         else:
             # If no command was handled, proceed with conversation
@@ -414,11 +448,11 @@ while True:
             
             # Speak response
             print("🔊 Speaking response...")
-            aioc_ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
-            play_tts_audio_fast(ollama_response, coqui_tts_engine, aioc_ril)
+            ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
+            play_tts_audio_fast(ollama_response, coqui_tts_engine, ril)
 
         # Reset audio device after TTS for next recording cycle
-        aioc_ril.reset_audio_device()            
+        ril.reset_audio_device()            
     except KeyboardInterrupt:
         print("\n🛑 Interrupted by user. Shutting down...")
         break
@@ -428,4 +462,4 @@ while True:
 
 print("🏁 Ham Radio AI Assistant shutdown complete.")
 periodic_identifier.stop() # Stop periodic identification
-aioc_ril.close() # Close the RIL (which closes serial conn)
+ril.close() # Close the RIL (which closes serial conn)
