@@ -64,6 +64,7 @@ Available voice commands:
     - "{self.BOT_NAME}, status" or "{self.BOT_NAME}, report": Reports the current AI model and callsign.
     - "{self.BOT_NAME}, reset" or "{self.BOT_NAME}, start new chat": Clears the conversation history and starts fresh.
     - "{self.BOT_NAME}, break" or "{self.BOT_NAME}, exit": Shuts down the assistant.
+    - "{self.BOT_NAME}, identify" or "identify", "call sign", "what is your call sign", "who are you": Responds with your phonetic callsign "{self.BOT_PHONETIC_CALLSIGN}".
 
 And most of all, you are to respond using 100 words or less.
 

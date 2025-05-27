@@ -369,18 +369,24 @@ while True:
 
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")
-            play_tts_audio(f"Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} signing off. " +
+            play_tts_audio(f"Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down. " +
                 "I am clear and shutting down my processes.", coqui_tts_engine, aioc_ril)
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
-            status_report = f"I am currently using the {DEFAULT_MODEL} model. My callsign is {prompt_mgr.get_bot_phonetic_callsign()}."
+            status_report = f"I am {prompt_mgr.get_bot_name()}. I am currently using the {DEFAULT_MODEL} large language model for intelligence and operating offline."
             play_tts_audio(status_report, coqui_tts_engine, aioc_ril)
             continue
         elif command_type == "reset":
             print("🔄 Reset command identified by main.py. Resetting context.")
             prompt_mgr.reset_context()
-            play_tts_audio("My context has been reset. I am ready for a new conversation.", coqui_tts_engine, aioc_ril)
+            play_tts_audio("My context has been reset. I am ready for a new conversation.", 
+                           coqui_tts_engine, aioc_ril)
+            continue
+        elif command_type == "identify":
+            print("🆔 Identify command identified by main.py.")
+            identify_response = f"This is {prompt_mgr.get_bot_phonetic_callsign()}."
+            play_tts_audio(identify_response, coqui_tts_engine, aioc_ril)
             continue
         else:
             # If no command was handled, proceed with conversation
