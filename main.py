@@ -372,6 +372,7 @@ while True:
         # Step 2: Process the command
 
         # RICHC: This is a hack to get the wake word detector to pass the name of the bot. 
+        operator_text = f"{prompt_mgr.get_bot_name()}, {operator_text}"
         # Assumes the wake word is the same as the bots name.
         print(f"🗣️  Processing command: '{operator_text}'")
         

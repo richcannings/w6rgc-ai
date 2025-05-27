@@ -1,12 +1,12 @@
-# W6RGC-AI: Off Grid Ham Radio AI Voice Assistant
+# W6RGC/AI: Off Grid Ham Radio AI Voice Assistant
 
 ## Overview
 
 If "AI is the new electricity", then someday we'll need a backup AI buddy when communication systems go down. 
 
-That's where W6RGC-AI comes in.
+That's where W6RGC/AI comes in.
 
-W6RGC-AI is a voice assistant for ham radio operators that runs entirely on your local computer. No internet? No problem!
+W6RGC/AI is a voice assistant for ham radio operators that runs entirely on your local computer. No internet? No problem!
 
 It's a Python-powered helper that uses a sequence of four AI models to understand you and talk back:
 
