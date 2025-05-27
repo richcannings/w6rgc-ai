@@ -24,7 +24,7 @@ def handle_command(operator_text, prompt_mgr):
         return "status"
 
     # Check for reset/new chat command
-    if re.search(rf"{re.escape(bot_name)}.*?\b(reset|start new chat|new chat)\b", operator_text, re.IGNORECASE):
+    if re.search(rf"{re.escape(bot_name)}.*?\b(reset|start a new chat|new chat)\b", operator_text, re.IGNORECASE):
         print("🔄 Reset command detected by commands.py.")
         return "reset"
         

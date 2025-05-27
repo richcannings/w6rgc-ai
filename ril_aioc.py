@@ -81,6 +81,8 @@ class RadioInterfaceLayerAIOC:
             raise RuntimeError(f"Failed to initialize PTT on {port_name}. Radio control will not be possible.") from e
 
 
+    # TODO: Check that the frequency is not in use before activating PTT. If in use, sleep for 3 
+    # seconds and try again.
     def ptt_on(self):
         """Activates PTT via serial port."""
         if self.serial_conn and self.serial_conn.is_open:

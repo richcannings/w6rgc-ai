@@ -73,6 +73,7 @@ import wake_word_detector
 
 import prompts
 from prompts import PromptManager
+import commands # Import the new commands module
 
 from ril_aioc import RadioInterfaceLayerAIOC # New import
 
@@ -359,39 +360,47 @@ while True:
         
         # Step 2: Process the command
 
-        # RICHC: This is a hack to get the wake word detector to pass the name of the bot.
-        operator_text = f"{prompt_mgr.get_bot_name()}, {operator_text}"
+        # RICHC: This is a hack to get the wake word detector to pass the name of the bot. 
+        # Assumes the wake word is the same as the bots name.
         print(f"🗣️  Processing command: '{operator_text}'")
         
-        # Check for termination command
-        if re.search(rf"{re.escape(prompt_mgr.get_bot_name())}.*?\b(break|brake|exit|quit|shutdown)\b", operator_text, re.IGNORECASE):
-            print("🛑 Termination command detected. Shutting down...")
+        # Identify the command using the commands module
+        command_type = commands.handle_command(operator_text, prompt_mgr)
+
+        if command_type == "terminate":
+            print("🛑 Termination command identified by main.py. Shutting down...")
             play_tts_audio(f"Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} signing off. " +
                 "I am clear and shutting down my processes.", coqui_tts_engine, aioc_ril)
             break
-        
-        print(f"💬 Conversation request detected")
+        elif command_type == "status":
+            print("⚙️ Status command identified by main.py.")
+            status_report = f"I am currently using the {DEFAULT_MODEL} model. My callsign is {prompt_mgr.get_bot_phonetic_callsign()}."
+            play_tts_audio(status_report, coqui_tts_engine, aioc_ril)
+            continue
+        elif command_type == "reset":
+            print("🔄 Reset command identified by main.py. Resetting context.")
+            prompt_mgr.reset_context()
+            play_tts_audio("My context has been reset. I am ready for a new conversation.", coqui_tts_engine, aioc_ril)
+            continue
+        else:
+            # If no command was handled, proceed with conversation
+            print(f"💬 Conversation request detected")
             
-        # Ask AI: Send transcribed test from the operator to the AI
-        current_prompt = prompt_mgr.add_operator_request_to_context(operator_text)
-        print("🤖 Sending to Ollama...")
-        print(f"Current prompt: {current_prompt}")
-        ollama_response = ask_ollama(current_prompt)
-        print(f"🤖 Ollama replied: {ollama_response}")
-        prompt_mgr.add_ai_response_to_context(ollama_response)
+            # Ask AI: Send transcribed test from the operator to the AI
+            current_prompt = prompt_mgr.add_operator_request_to_context(operator_text)
+            print("🤖 Sending to Ollama...")
+            print(f"Current prompt: {current_prompt}")
+            ollama_response = ask_ollama(current_prompt)
+            print(f"🤖 Ollama replied: {ollama_response}")
+            prompt_mgr.add_ai_response_to_context(ollama_response)
             
-        # Speak response
-        print("🔊 Speaking response...")
-        
-        # Reset audio device before TTS to prevent conflicts
-        aioc_ril.reset_audio_device()
-        
-        play_tts_audio_fast(ollama_response, coqui_tts_engine, aioc_ril)
-        
-        # Reset audio device after TTS for next recording cycle
-        aioc_ril.reset_audio_device()
+            # Speak response
+            print("🔊 Speaking response...")
+            aioc_ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
+            play_tts_audio_fast(ollama_response, coqui_tts_engine, aioc_ril)
 
-            
+        # Reset audio device after TTS for next recording cycle
+        aioc_ril.reset_audio_device()            
     except KeyboardInterrupt:
         print("\n🛑 Interrupted by user. Shutting down...")
         break

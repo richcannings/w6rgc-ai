@@ -1,32 +1,39 @@
-# W6RGC-AI: Ham Radio AI Voice Assistant
+# W6RGC-AI: Ham Radio AI Voice Assistant running only local models
 
 ## Overview
 
-Assuming that "AI is the new electricity". Some day we will need a backup AI system.
 
-This experiment implements an AI backup in the form a voice assistant over ham radio and running solely on local models. Thus, not requiring the Internet. 
+If "AI is the new electricity", then someday we'll need a backup AI buddy when communication systems go down. That's where W6RGC-AI comes in.
 
-W6RGC-AI is a Python-based voice assistant designed for amateur radio operators. It uses efficient AST-based wake word detection, speech-to-text, a large language model (LLM), and text-to-speech to provide a conversational AI experience, integrated with ham radio operations, including PTT (Push-to-Talk) control via a serial interface (e.g., for the [AIOC adapter](https://github.com/skuep/AIOC)).
+W6RGC-AI is a voice assistant for ham radio operators that runs entirely on your local computer. No internet? No problem!
 
-The assistant listens for the configurable wake word "seven" (from 35+ available options) before processing commands or queries, making it suitable for hands-free operation in a radio shack environment.
+It's a Python-powered helper that uses a sequence of four AI models to understand you and talk back:
+
+1.  A smart wake word spotter (it listens for "seven" by default, but you can choose from over 35 options!)
+2.  Speech-to-text using Whisper (so it understands what you say)
+3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b)
+4.  Coqui text-to-speech to give it a voice
+
+Right now, it's set up to work with ham radios using an [AIOC adapter](https://github.com/skuep/AIOC). Digirig compatibility coming soon.
+
+Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
+
+You can also use voice commands like:
+- **"Status" or "Report"**: Say "seven, status" or "seven, report" to find out which AI model is active and the assistant's callsign.
+- **"Reset" or "New Chat"**: Say "seven, reset" or "seven, start a new chat" to wipe the conversation slate clean.
+- **"Terminate"**: Say "seven, break" or "seven, exit" to shut down the assistant.
 
 ## Purpose
 
-This project extends the art of amateur radio by exploring how AI can support and enhance the hobby. The goal is to demonstrate practical applications of artificial intelligence in amateur radio operations, from emergency communications to everyday radio activities.
+This project is all about mixing the classic hobby of amateur radio with the new world of AI. The main idea is to see how AI can make ham radio even better, whether that's for critical communications during an emergency or just for fun, everyday radio chats.
 
-The purposes depends on internet connectivity for full functionality. An offline solution is like an AI backup, while the online system allows for much greater functionality
+Think of it this way:
+*   **When the internet's down (Offline):** This is your AI backup. Imagine an LLM trained with all sorts of useful info for ham radio operators – ARES manuals, FEMA documents, local emergency plans, and so on. It could be an extra "voice" helping you figure things out. Plus, things like voice translation could be added pretty easily.
+*   **When you're online:** You can connect to even more powerful LLMs. Most online AIs can browse the internet and do all sorts of cool stuff.
 
-### Offline
-
-This is the AI "backup" scenario. The LLM can be trained to support amateur radio services by being another voice in solutioning by training the local LLM with ARES information, FEMA docs, County information, etc. Voice translations would be another easier feature to add. 
-
-### Online
-
-Connects to much more powerful LLMs. Most online LLMs can access the internet and perform many functions.
-
-One example (and my next project) is "Voice APRS" with the features to:
-* Send and receive APRS messages
-* Position beaconing using AI based location (E.g. "This is W6RGC. Beacon that I am at the corner of West Cliff Drive and Swift Street in Santa Cruz")
+One exciting idea for the future (and my next project!) is "Voice APRS." Imagine being able to:
+* Send and receive APRS messages using just your voice.
+* Beacon your location by saying something like, "This is W6RGC. Tell everyone I'm at the corner of West Cliff Drive and Swift Street in Santa Cruz."
 
 ## Features
 
@@ -97,8 +104,7 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
 *   **Ollama:** Install Ollama by running the following command in your terminal:
     ```bash
     curl -fsSL https://ollama.com/install.sh | sh
-    ```
-    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma3:12b`).
+    ```    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma3:12b`).
 *   **AIOC (All-In-One-Cable) Adapter:** This project is designed to work with an AIOC adapter for PTT (Push-to-Talk) functionality. The system automatically detects AIOC devices by name.
 
 ### Installation Steps
@@ -255,3 +261,4 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. 
+
