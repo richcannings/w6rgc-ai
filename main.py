@@ -369,8 +369,8 @@ while True:
 
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")
-            play_tts_audio(f"Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down. " +
-                "I am clear and shutting down my processes.", coqui_tts_engine, aioc_ril)
+            play_tts_audio(f"Terminating. Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down. " +
+                "I am shutting down my processes. I am clear. Seven three.", coqui_tts_engine, aioc_ril)
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")

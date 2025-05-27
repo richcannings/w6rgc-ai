@@ -15,13 +15,14 @@ It's a Python-powered helper that uses a sequence of four AI models to understan
 3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b). Plug in your own specialized models and prompts!
 4.  Coqui text-to-speech to give it a voice
 
-Right now, it's set up to work with ham radios using an [AIOC adapter](https://github.com/skuep/AIOC). Digirig compatibility coming soon. and 
+Right now, it's set up for ham radios to automatically detect and use an [AIOC adapter](https://github.com/skuep/AIOC). [Digirig](https://digirig.net/) auto detect and compatibility coming soon.
 
 Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
 
 You can also use voice commands like:
 - **"Status" or "Report"**: Say "seven, status" or "seven, report" to find out which AI model is active and the assistant's callsign.
 - **"Reset" or "New Chat"**: Say "seven, reset" or "seven, start a new chat" to wipe the conversation slate clean.
+- **"Identify"**: Say "seven, identify", "identify", "call sign", "what is your call sign", or "who are you" to hear the assistant's phonetic callsign.
 - **"Terminate"**: Say "seven, break" or "seven, exit" to shut down the assistant.
 
 ## Purpose
@@ -49,6 +50,7 @@ One exciting idea for the future (and my next project!) is "Voice APRS." Imagine
 *   **Customizable Persona:** AI's name, callsign, and speaking style can be configured in `prompts.py`
 *   **Contextual Conversation:** Maintains conversation history for more natural interactions
 *   **PTT Control:** Integrates with serial PTT for transmitting AI responses over the air
+*   **Carrier Sense:** Automatically checks for ongoing transmissions before keying PTT to avoid interference
 *   **Graceful Termination:** Recognizes voice commands like "break", "exit", "quit", or "shutdown" to gracefully shut down
 
 ## Architecture
@@ -57,7 +59,7 @@ The system is organized into several key modules:
 
 - **`main.py`**: Main application entry point and orchestration
 - **`constants.py`**: Centralized configuration management for all settings
-- **`commands.py`**: Command identification and parsing for voice commands (status, reset, terminate)
+- **`commands.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
 - **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
 - **`prompts.py`**: AI persona and conversation management (class-based)
 - **`wake_word_detector.py`**: AST-based wake word detection system
@@ -189,6 +191,13 @@ TTS_MODEL_SPEEDY_SPEECH = "tts_models/en/ljspeech/speedy_speech" # Alternative f
 TTS_MODEL_TACOTRON2 = "tts_models/en/ljspeech/tacotron2-DDC"   # Fallback model
 ```
 
+### Carrier Sense Configuration
+```python
+CARRIER_SENSE_DURATION = 0.5      # seconds to monitor for carrier before PTT
+CARRIER_SENSE_MAX_RETRIES = 3     # maximum attempts to find clear frequency  
+CARRIER_SENSE_RETRY_DELAY = 3.0   # seconds to wait between carrier sense attempts
+```
+
 ## Hardware Requirements
 
 *   **Minimum:** CPU with 4+ cores, 8GB RAM
@@ -221,6 +230,7 @@ python commands.py                # Test command identification
 *   **CUDA errors:** Install appropriate PyTorch version for your CUDA version
 *   **Ollama connection errors:** Ensure Ollama service is running with `systemctl status ollama`
 *   **Configuration issues:** All settings are centralized in `constants.py` - check this file first
+*   **Carrier sense issues:** If PTT activation is delayed or blocked, adjust `CARRIER_SENSE_DURATION`, `AUDIO_THRESHOLD`, or disable carrier sense by setting `CARRIER_SENSE_MAX_RETRIES = 0`
 
 ## Future Enhancements
 

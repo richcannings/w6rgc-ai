@@ -9,7 +9,11 @@ from constants import (
     WHISPER_TARGET_SAMPLE_RATE,
     TEST_FREQUENCY,
     TEST_DURATION,
-    TEST_AMPLITUDE
+    TEST_AMPLITUDE,
+    AUDIO_THRESHOLD,
+    CARRIER_SENSE_DURATION,
+    CARRIER_SENSE_MAX_RETRIES,
+    CARRIER_SENSE_RETRY_DELAY
 )
 
 class RadioInterfaceLayerAIOC:
@@ -81,20 +85,89 @@ class RadioInterfaceLayerAIOC:
             raise RuntimeError(f"Failed to initialize PTT on {port_name}. Radio control will not be possible.") from e
 
 
-    # TODO: Check that the frequency is not in use before activating PTT. If in use, sleep for 3 
-    # seconds and try again.
-    def ptt_on(self):
-        """Activates PTT via serial port."""
-        if self.serial_conn and self.serial_conn.is_open:
-            try:
-                self.serial_conn.setRTS(True)
-                self.serial_conn.setDTR(True)
-                time.sleep(0.1)  # Delay for PTT activation
-                print("PTT ON")
-            except serial.SerialException as e:
-                print(f"Error setting PTT ON: {e}")
-        else:
+    def _check_carrier_sense(self, duration=CARRIER_SENSE_DURATION):
+        """
+        Checks for audio input (carrier) on the radio frequency.
+        Returns True if carrier is detected, False if frequency is clear.
+        
+        Args:
+            duration (float): Duration in seconds to monitor for carrier
+        """
+        if self.audio_device_index is None:
+            print("⚠️ Cannot check carrier sense: AIOC audio device not configured.")
+            return False
+            
+        try:
+            print(f"📡 Checking carrier sense for {duration}s...")
+            
+            # Get stream parameters
+            stream_params = self.get_input_stream_params()
+            
+            # Calculate number of frames to read
+            frames_to_read = int(duration * self.samplerate)
+            frame_size = int(0.1 * self.samplerate)  # 100ms frames
+            
+            with sd.InputStream(**stream_params) as stream:
+                for _ in range(0, frames_to_read, frame_size):
+                    frame, _ = stream.read(frame_size)
+                    frame = np.squeeze(frame)
+                    amplitude = np.max(np.abs(frame))
+                    
+                    if amplitude > AUDIO_THRESHOLD:
+                        print(f"📡 Carrier detected (amplitude: {amplitude:.4f})")
+                        return True
+                        
+            print("📡 Frequency clear")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error during carrier sense check: {e}")
+            # If we can't check, assume frequency is clear to avoid blocking transmission
+            return False
+
+    def ptt_on(self, max_retries=CARRIER_SENSE_MAX_RETRIES, retry_delay=CARRIER_SENSE_RETRY_DELAY):
+        """
+        Activates PTT via serial port with carrier sense.
+        Checks for carrier before transmitting and retries if frequency is busy.
+        
+        Args:
+            max_retries (int): Maximum number of carrier sense attempts
+            retry_delay (float): Delay in seconds between retries when carrier is detected
+        """
+        if not (self.serial_conn and self.serial_conn.is_open):
             print("Warning: Serial connection not available or not open for PTT ON.")
+            return
+            
+        # Carrier sense loop
+        for attempt in range(max_retries):
+            if not self._check_carrier_sense():
+                # Frequency is clear, proceed with PTT
+                try:
+                    self.serial_conn.setRTS(True)
+                    self.serial_conn.setDTR(True)
+                    time.sleep(0.1)  # Delay for PTT activation
+                    print("PTT ON")
+                    return
+                except serial.SerialException as e:
+                    print(f"Error setting PTT ON: {e}")
+                    return
+            else:
+                # Carrier detected, wait and retry
+                if attempt < max_retries - 1:
+                    print(f"📡 Frequency busy, waiting {retry_delay}s before retry {attempt + 2}/{max_retries}...")
+                    time.sleep(retry_delay)
+                else:
+                    print(f"📡 Frequency still busy after {max_retries} attempts. Proceeding with transmission anyway.")
+                    # Emergency transmission - proceed even if carrier detected
+                    try:
+                        self.serial_conn.setRTS(True)
+                        self.serial_conn.setDTR(True)
+                        time.sleep(0.1)  # Delay for PTT activation
+                        print("PTT ON (emergency override)")
+                        return
+                    except serial.SerialException as e:
+                        print(f"Error setting PTT ON: {e}")
+                        return
 
     def ptt_off(self):
         """Deactivates PTT via serial port."""
