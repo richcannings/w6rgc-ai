@@ -16,7 +16,7 @@ import serial
 import time
 import numpy as np
 from constants import (
-    DEFAULT_SERIAL_PORT,
+    DEFAULT_AIOC_SERIAL_PORT,
     SERIAL_TIMEOUT,
     DEFAULT_AUDIO_CHANNELS,
     WHISPER_TARGET_SAMPLE_RATE,
@@ -30,7 +30,7 @@ from constants import (
 )
 
 class RadioInterfaceLayerAIOC:
-    def __init__(self, serial_port_name=DEFAULT_SERIAL_PORT):
+    def __init__(self, serial_port_name=DEFAULT_AIOC_SERIAL_PORT):
         """
         Initializes the Radio Interface Layer for the AIOC.
         Detects the AIOC audio device and sets up PTT control.
@@ -217,21 +217,35 @@ class RadioInterfaceLayerAIOC:
         """
         Plays the given audio data through the AIOC device.
         Assumes audio_data is already prepared (numpy array, mono, normalized).
+        Automatically resamples to device-supported sample rate if needed.
         """
         if self.audio_device_index is None:
             print("Error: AIOC audio device not configured for playback.")
             return
         
-        # Audio data preparation (numpy conversion, mono, normalization)
-        # is now expected to be done by the caller in main.py.
+        # Check if we need to resample
+        target_sample_rate = sample_rate
+        supported_rates = [44100, 48000]  # Known supported rates for most USB audio devices
+        
+        if sample_rate not in supported_rates:
+            # Resample to 44100 Hz (most commonly supported)
+            target_sample_rate = 44100
+            print(f"🔄 Resampling audio from {sample_rate} Hz to {target_sample_rate} Hz...")
+            
+            # Calculate new length
+            new_length = int(len(audio_data) * target_sample_rate / sample_rate)
+            
+            # Resample using scipy
+            from scipy.signal import resample
+            audio_data = resample(audio_data, new_length)
+            
+            print(f"✅ Resampled audio: {len(audio_data)} samples at {target_sample_rate} Hz")
 
-        # self.reset_audio_device() # Caller (main.py) should handle reset if needed.
-        # self.ptt_on() # Caller (main.py) should handle PTT.
         try:
-            print(f"🔊 Playing audio via AIOC (raw) on device {self.audio_device_index} at {sample_rate} Hz...")
+            print(f"🔊 Playing audio via AIOC (raw) on device {self.audio_device_index} at {target_sample_rate} Hz...")
             sd.play(
                 audio_data,
-                samplerate=sample_rate,
+                samplerate=target_sample_rate,
                 device=self.audio_device_index,
                 blocking=True
             )
@@ -288,7 +302,7 @@ if __name__ == '__main__':
         print("Attempting to initialize RadioInterfaceLayerAIOC...")
         # You might need to change "/dev/ttyACM0" to your actual AIOC serial port
         # or implement a discovery mechanism.
-        aioc_ril = RadioInterfaceLayerAIOC(serial_port_name=DEFAULT_SERIAL_PORT) 
+        aioc_ril = RadioInterfaceLayerAIOC(serial_port_name=DEFAULT_AIOC_SERIAL_PORT) 
         print("RadioInterfaceLayerAIOC initialized successfully.")
         
         print(f"Device Index: {aioc_ril.get_audio_device_index()}")

@@ -1,6 +1,6 @@
 # W6RGC-AI: Off Grid Ham Radio AI Voice Assistant
 #
-# Author: Richochet <richochet@example.com>  TODO: Replace with actual email
+# Author: Rich Cannings <rcannings@gmail.com>
 # License: Apache License, Version 2.0
 # https://www.apache.org/licenses/LICENSE-2.0
 #

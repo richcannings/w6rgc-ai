@@ -16,7 +16,7 @@ import serial
 import time
 import numpy as np
 from constants import (
-    DEFAULT_SERIAL_PORT,
+    DEFAULT_DIGIRIG_SERIAL_PORT,
     SERIAL_TIMEOUT,
     DEFAULT_AUDIO_CHANNELS,
     WHISPER_TARGET_SAMPLE_RATE,
@@ -30,7 +30,7 @@ from constants import (
 )
 
 class RadioInterfaceLayerDigiRig:
-    def __init__(self, serial_port_name=DEFAULT_SERIAL_PORT):
+    def __init__(self, serial_port_name=DEFAULT_DIGIRIG_SERIAL_PORT):
         """
         Initializes the Radio Interface Layer for the Digirig.
         Detects the Digirig audio device and sets up PTT control.
@@ -55,10 +55,7 @@ class RadioInterfaceLayerDigiRig:
         # Common Digirig device name patterns
         digirig_patterns = [
             "Digirig",
-            "digirig", 
-            "DIGIRIG",
-            "USB Audio Device",  # Some Digirig devices may appear as generic USB audio
-            "USB Audio CODEC"    # Alternative naming pattern
+            "USB PnP Sound Device"
         ]
         
         for i, device in enumerate(devices):
@@ -77,7 +74,7 @@ class RadioInterfaceLayerDigiRig:
                     # Determine input channels
                     # Prefer 'max_input_channels' but ensure it's at least 1 if device is valid input
                     # Some devices might report preferred channels as 0, so check max_input_channels
-                    self.channels = device.get('max_input_channels', 0)
+                    self.channels = 1 # device.get('max_input_channels', 0)
                     if self.channels == 0 and device.get('max_input_channels',0) > 0 : # Corrected this logic
                         self.channels = DEFAULT_AUDIO_CHANNELS # Default to mono if max_input_channels > 0
                     elif self.channels == 0 : # if still 0, means no input channels
@@ -171,7 +168,7 @@ class RadioInterfaceLayerDigiRig:
                 # Frequency is clear, proceed with PTT
                 try:
                     self.serial_conn.setRTS(True)
-                    self.serial_conn.setDTR(True)
+                    # self.serial_conn.setDTR(True)
                     time.sleep(0.1)  # Delay for PTT activation
                     print("PTT ON")
                     return
@@ -184,17 +181,8 @@ class RadioInterfaceLayerDigiRig:
                     print(f"📡 Frequency busy, waiting {retry_delay}s before retry {attempt + 2}/{max_retries}...")
                     time.sleep(retry_delay)
                 else:
-                    print(f"📡 Frequency still busy after {max_retries} attempts. Proceeding with transmission anyway.")
-                    # Emergency transmission - proceed even if carrier detected
-                    try:
-                        self.serial_conn.setRTS(True)
-                        self.serial_conn.setDTR(True)
-                        time.sleep(0.1)  # Delay for PTT activation
-                        print("PTT ON (emergency override)")
-                        return
-                    except serial.SerialException as e:
-                        print(f"Error setting PTT ON: {e}")
-                        return
+                    print(f"📡 Frequency still busy after {max_retries} attempts. Stopping transmission.")
+                    return
 
     def ptt_off(self):
         """Deactivates PTT via serial port."""
@@ -202,7 +190,7 @@ class RadioInterfaceLayerDigiRig:
             try:
                 time.sleep(0.1) # Small delay before PTT off
                 self.serial_conn.setRTS(False)
-                self.serial_conn.setDTR(False)
+                # self.serial_conn.setDTR(False)
                 print("PTT OFF")
             except serial.SerialException as e:
                 print(f"Error setting PTT OFF: {e}")
@@ -231,21 +219,35 @@ class RadioInterfaceLayerDigiRig:
         """
         Plays the given audio data through the Digirig device.
         Assumes audio_data is already prepared (numpy array, mono, normalized).
+        Automatically resamples to device-supported sample rate if needed.
         """
         if self.audio_device_index is None:
             print("Error: Digirig audio device not configured for playback.")
             return
         
-        # Audio data preparation (numpy conversion, mono, normalization)
-        # is now expected to be done by the caller in main.py.
+        # Check if we need to resample
+        target_sample_rate = sample_rate
+        supported_rates = [44100, 48000]  # Known supported rates for most USB audio devices
+        
+        if sample_rate not in supported_rates:
+            # Resample to 44100 Hz (most commonly supported)
+            target_sample_rate = 44100
+            print(f"🔄 Resampling audio from {sample_rate} Hz to {target_sample_rate} Hz...")
+            
+            # Calculate new length
+            new_length = int(len(audio_data) * target_sample_rate / sample_rate)
+            
+            # Resample using scipy
+            from scipy.signal import resample
+            audio_data = resample(audio_data, new_length)
+            
+            print(f"✅ Resampled audio: {len(audio_data)} samples at {target_sample_rate} Hz")
 
-        # self.reset_audio_device() # Caller (main.py) should handle reset if needed.
-        # self.ptt_on() # Caller (main.py) should handle PTT.
         try:
-            print(f"🔊 Playing audio via Digirig (raw) on device {self.audio_device_index} at {sample_rate} Hz...")
+            print(f"🔊 Playing audio via Digirig (raw) on device {self.audio_device_index} at {target_sample_rate} Hz...")
             sd.play(
                 audio_data,
-                samplerate=sample_rate,
+                samplerate=target_sample_rate,
                 device=self.audio_device_index,
                 blocking=True
             )
@@ -302,7 +304,7 @@ if __name__ == '__main__':
         print("Attempting to initialize RadioInterfaceLayerDigiRig...")
         # You might need to change "/dev/ttyACM0" to your actual Digirig serial port
         # or implement a discovery mechanism.
-        digirig_ril = RadioInterfaceLayerDigiRig(serial_port_name=DEFAULT_SERIAL_PORT) 
+        digirig_ril = RadioInterfaceLayerDigiRig(serial_port_name=DEFAULT_DIGIRIG_SERIAL_PORT) 
         print("RadioInterfaceLayerDigiRig initialized successfully.")
         
         print(f"Device Index: {digirig_ril.get_audio_device_index()}")

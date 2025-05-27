@@ -102,7 +102,8 @@ from constants import (
     TTS_OUTPUT_FILE,
     
     # Hardware configuration
-    DEFAULT_SERIAL_PORT,
+    DEFAULT_AIOC_SERIAL_PORT,
+    DEFAULT_DIGIRIG_SERIAL_PORT,
     RIL_TYPE_AIOC,
     RIL_TYPE_DIGIRIG,
     DEFAULT_RIL_TYPE,
@@ -114,13 +115,13 @@ from constants import (
 
 ### HELPER FUNCTIONS ###
 
-def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=DEFAULT_SERIAL_PORT):
+def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=None):
     """
     Factory function to create the appropriate Radio Interface Layer instance.
     
     Args:
         ril_type (str): Type of RIL to create ("aioc" or "digirig")
-        serial_port_name (str): Serial port for PTT control
+        serial_port_name (str): Serial port for PTT control (auto-selected if None)
         
     Returns:
         RadioInterfaceLayer instance (AIOC or Digirig)
@@ -130,15 +131,22 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=DEF
         RuntimeError: If RIL initialization fails
     """
     if ril_type.lower() == RIL_TYPE_AIOC:
+        if serial_port_name is None:
+            serial_port_name = DEFAULT_AIOC_SERIAL_PORT
         print(f"🔧 Initializing AIOC Radio Interface Layer...")
         return RadioInterfaceLayerAIOC(serial_port_name=serial_port_name)
     elif ril_type.lower() == RIL_TYPE_DIGIRIG:
+        if serial_port_name is None:
+            serial_port_name = DEFAULT_DIGIRIG_SERIAL_PORT
         print(f"🔧 Initializing Digirig Radio Interface Layer...")
         return RadioInterfaceLayerDigiRig(serial_port_name=serial_port_name)
     else:
         raise ValueError(f"Unsupported RIL type: {ril_type}. Supported types: {RIL_TYPE_AIOC}, {RIL_TYPE_DIGIRIG}")
 
 def convert_ollama_response(response_text):
+    """
+    Converts the JSON response from Ollama to a string.
+    """
     try:
         # Try to parse the response as JSON
         response_list = json.loads(response_text)
@@ -151,6 +159,9 @@ def convert_ollama_response(response_text):
         return response_text
 
 def ask_ollama(prompt):
+    """
+    Asks Ollama for a response to the given prompt.
+    """
     payload = {
         "model": DEFAULT_MODEL,
         "prompt": prompt
@@ -307,7 +318,7 @@ def get_full_command_after_wake_word(aioc_interface, model):
 # Initialize the appropriate Radio Interface Layer based on configuration
 try:
     print(f"🔧 Selected RIL type: {DEFAULT_RIL_TYPE.upper()}")
-    ril = create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=DEFAULT_SERIAL_PORT)
+    ril = create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE)
     
     # Get necessary info from the RIL instance (same interface for both AIOC and Digirig)
     audio_index = ril.get_audio_device_index()
@@ -378,8 +389,8 @@ periodic_identifier = PeriodicIdentifier(
 print("🚀 Ham Radio AI Assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper {model}")
-print(f"Text-to-speech: CoquiTTS")
 print(f"AI model: {DEFAULT_MODEL}")
+print(f"Text-to-speech: {coqui_tts_engine.model_name}")
 print("=" * 50)
 
 # Start periodic identification
@@ -433,6 +444,7 @@ while True:
             print("🆔 Identify command identified by main.py.")
             identify_response = f"This is {prompt_mgr.get_bot_phonetic_callsign()}."
             play_tts_audio(identify_response, coqui_tts_engine, ril)
+            periodic_identifier.restart_timer
             continue
         else:
             # If no command was handled, proceed with conversation
@@ -450,6 +462,7 @@ while True:
             print("🔊 Speaking response...")
             ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
             play_tts_audio_fast(ollama_response, coqui_tts_engine, ril)
+            periodic_identifier.restart_timer
 
         # Reset audio device after TTS for next recording cycle
         ril.reset_audio_device()            

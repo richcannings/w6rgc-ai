@@ -76,10 +76,11 @@ DEFAULT_WAKE_WORD_METHOD = WAKE_WORD_METHOD_AST
 # Radio Interface Layer (RIL) Configuration
 RIL_TYPE_AIOC = "aioc"
 RIL_TYPE_DIGIRIG = "digirig"
-DEFAULT_RIL_TYPE = RIL_TYPE_AIOC  # Change this to switch between AIOC and Digirig
+DEFAULT_RIL_TYPE = "digirig" # RIL_TYPE_AIOC  # Change this to switch between AIOC and Digirig
 
 # Serial Port Configuration
-DEFAULT_SERIAL_PORT = "/dev/ttyACM0"
+DEFAULT_AIOC_SERIAL_PORT = "/dev/ttyACM0"
+DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB2"
 SERIAL_TIMEOUT = 1  # seconds
 
 # ============================================================================

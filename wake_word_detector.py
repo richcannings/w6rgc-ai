@@ -13,6 +13,8 @@
 #      forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, 
 #      one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
 #
+# Some names to consider: marvin, shiela, seven, zero.
+#
 # Features:
 #  - Automatic sample rate conversion (48kHz device → 16kHz model)
 #  - CUDA acceleration when available

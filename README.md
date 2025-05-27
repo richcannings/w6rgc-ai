@@ -15,7 +15,7 @@ It's a Python-powered helper that uses a sequence of four AI models to understan
 3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b). Plug in your own specialized models and prompts!
 4.  Coqui text-to-speech to give it a voice
 
-Right now, it's set up for ham radios to automatically detect and use an [AIOC adapter](https://github.com/skuep/AIOC). [Digirig](https://digirig.net/) auto detect and compatibility coming soon.
+The app communicates with ham radios with either an [AIOC adapter](https://github.com/skuep/AIOC) or [Digirig](https://digirig.net/).
 
 Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
 
@@ -51,6 +51,7 @@ One exciting idea for the future (and my next project!) is "Voice APRS." Imagine
 *   **Contextual Conversation:** Maintains conversation history for more natural interactions
 *   **PTT Control:** Integrates with serial PTT for transmitting AI responses over the air
 *   **Carrier Sense:** Automatically checks for ongoing transmissions before keying PTT to avoid interference
+*   **Periodic Identification:** Automatic station identification at configurable intervals
 *   **Graceful Termination:** Recognizes voice commands like "break", "exit", "quit", or "shutdown" to gracefully shut down
 
 ## Architecture
@@ -61,8 +62,10 @@ The system is organized into several key modules:
 - **`constants.py`**: Centralized configuration management for all settings
 - **`commands.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
 - **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
+- **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware management
 - **`prompts.py`**: AI persona and conversation management (class-based)
 - **`wake_word_detector.py`**: AST-based wake word detection system
+- **`periodically_identify.py`**: Handles periodic station identification
 
 ## Wake Word Detection
 
@@ -108,7 +111,7 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
     ```bash
     curl -fsSL https://ollama.com/install.sh | sh
     ```    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma3:12b`).
-*   **AIOC (All-In-One-Cable) Adapter:** This project is designed to work with an AIOC adapter for PTT (Push-to-Talk) functionality. The system automatically detects AIOC devices by name.
+*   **AIOC (All-In-One-Cable) Adapter or Digirig:** This project is designed to work with an AIOC or Digirig adapter for PTT (Push-to-Talk) functionality. The system automatically detects AIOC and Digirig devices by name.
 
 ### Installation Steps
 
@@ -139,12 +142,13 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
     *   **Primary Configuration**: Edit `constants.py` to modify all application settings:
       - Audio processing parameters (thresholds, sample rates)
       - Wake word selection (choose from 35+ available words)
-      - Hardware configuration (serial ports)
+      - Hardware configuration (RIL type selection: AIOC or Digirig, serial ports)
       - AI/LLM settings (Ollama URL, model selection)
       - TTS configuration (models, audio settings)
       - Bot identity (name, callsign, persona)
+      - Periodic identification interval
     *   **Advanced Configuration**: Customize AI persona and prompts in `prompts.py`
-    *   The system automatically detects AIOC hardware, but you can manually set serial port in `constants.py`
+    *   The system automatically detects AIOC/Digirig hardware, but you can manually set serial port in `constants.py`
 
 2.  **Run the main script:**
     ```bash
@@ -175,7 +179,9 @@ MAX_COMMAND_WORDS = 10          # Max words to check for commands (prevents acci
 
 ### Hardware Configuration
 ```python
-DEFAULT_SERIAL_PORT = "/dev/ttyACM0"  # Serial port for PTT control
+DEFAULT_RIL_TYPE = "digirig"  # Options: "aioc" or "digirig"
+DEFAULT_AIOC_SERIAL_PORT = "/dev/ttyACM0"  # Serial port for AIOC PTT control
+DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB2" # Serial port for Digirig PTT control
 ```
 
 ### Bot Identity (also configurable in prompts.py)
@@ -199,12 +205,17 @@ CARRIER_SENSE_MAX_RETRIES = 3     # maximum attempts to find clear frequency
 CARRIER_SENSE_RETRY_DELAY = 3.0   # seconds to wait between carrier sense attempts
 ```
 
+### Periodic Identification Configuration
+```python
+PERIODIC_ID_INTERVAL_MINUTES = 10  # minutes between automatic identification
+```
+
 ## Hardware Requirements
 
 *   **Minimum:** CPU with 4+ cores, 8GB RAM
 *   **Recommended:** GPU with CUDA support for faster processing
-*   **Audio:** AIOC (All-In-One-Cable) adapter or compatible USB audio interface
-*   **Serial:** USB serial port for PTT control (typically /dev/ttyACM0 or /dev/ttyACM1)
+*   **Audio:** AIOC (All-In-One-Cable) adapter, Digirig, or compatible USB audio interface
+*   **Serial:** USB serial port for PTT control (typically /dev/ttyACM0, /dev/ttyACM1, or /dev/ttyUSBx)
 
 ## Testing and Development
 
@@ -217,9 +228,11 @@ The project includes several testing utilities:
 To test individual components:
 ```bash
 python ril_aioc.py                # Test AIOC hardware interface
+python ril_digirig.py             # Test Digirig hardware interface
 python prompts.py                 # Test prompt management
 python wake_word_detector.py      # Test wake word detection
 python commands.py                # Test command identification
+python periodically_identify.py   # Test periodic identification
 ```
 
 ## Troubleshooting
@@ -235,10 +248,11 @@ python commands.py                # Test command identification
 
 ## Future Enhancements
 
-*   Digirig compatibility
 *   Automatic RIL detection
+*   Online models
 *   Voice APRS integration
 *   Custom wake words
+*   Commands to change models and online/offline modes
 *   Add modularity and a command to switch from offline mode (gemma) to online mode (Gemini or ChatGPT)
 *   More robust error handling and recovery
 *   Dynamic loading of AI personas

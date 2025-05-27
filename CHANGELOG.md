@@ -145,3 +145,32 @@ All notable changes to the W6RGC-AI Ham Radio Voice Assistant project will be do
 - AIOC adapter support
 - Serial PTT control
 - Basic wake word detection 
+
+## [Unreleased] - YYYY-MM-DD
+
+### Added
+- **Digirig Support**: Added support for Digirig radio interface hardware. Includes `ril_digirig.py` for Digirig-specific control and updates to `main.py` and `constants.py` to select and configure Digirig.
+- **Periodic Station Identification**: Implemented `periodically_identify.py` module to automatically transmit station identification at configurable intervals (default 10 minutes). Integrated into `main.py`.
+- **Carrier Sense Functionality**: Added carrier sense to both `ril_aioc.py` and `ril_digirig.py` to check for channel activity before PTT activation. Includes configurable duration, retries, and delay in `constants.py`.
+- **RIL Factory**: Introduced `create_radio_interface_layer` factory function in `main.py` to dynamically instantiate the correct RIL (AIOC or Digirig) based on configuration.
+
+### Changed
+- **`main.py`**: 
+    - Integrated Digirig support and RIL factory.
+    - Integrated periodic identification system.
+    - Updated RIL initialization to use the factory pattern.
+- **`constants.py`**:
+    - Added `RIL_TYPE_DIGIRIG`, `DEFAULT_DIGIRIG_SERIAL_PORT`, and `DEFAULT_RIL_TYPE` for Digirig configuration.
+    - Added `CARRIER_SENSE_DURATION`, `CARRIER_SENSE_MAX_RETRIES`, `CARRIER_SENSE_RETRY_DELAY` for carrier sense feature.
+    - Added `PERIODIC_ID_INTERVAL_MINUTES` for periodic identification.
+- **`ril_aioc.py`**: 
+    - Implemented carrier sense logic in `ptt_on` method.
+    - Refactored PTT logic to incorporate carrier sense checks and retries.
+- **`commands.py`**:
+    - Updated to use `MAX_COMMAND_WORDS` from `constants.py` to limit command parsing scope, preventing accidental triggers during longer sentences.
+
+### Removed
+- N/A
+
+### Fixed
+- N/A 
