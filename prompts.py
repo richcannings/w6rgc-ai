@@ -15,15 +15,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class PromptManager:
-    # Class attributes for bot identity - these are generally fixed.
-    OPERATOR_NAME = "Operator"
-    BOT_NAME = "7"
-    BOT_CALLSIGN = "W6RGC/AI"
-    BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A" # Consider if this is used, if not, could be removed
-    BOT_PHONETIC_CALLSIGN = "Whiskey 6 Radio Golf Charlie Stroke Artificial Intelligence"
+from constants import (
+    OPERATOR_NAME,
+    BOT_NAME,
+    BOT_CALLSIGN,
+    BOT_SPOKEN_CALLSIGN,
+    BOT_PHONETIC_CALLSIGN,
+    PROMPT_TYPE_ORIGINAL,
+    PROMPT_TYPE_RADIO_SCRIPT,
+    DEFAULT_PROMPT_TYPE
+)
 
-    def __init__(self, initial_prompt_type="original"):
+class PromptManager:
+    # Class attributes for bot identity - now imported from constants
+    OPERATOR_NAME = OPERATOR_NAME
+    BOT_NAME = BOT_NAME
+    BOT_CALLSIGN = BOT_CALLSIGN
+    BOT_SPOKEN_CALLSIGN = BOT_SPOKEN_CALLSIGN
+    BOT_PHONETIC_CALLSIGN = BOT_PHONETIC_CALLSIGN
+
+    def __init__(self, initial_prompt_type=DEFAULT_PROMPT_TYPE):
         """
         Initializes the PromptManager.
         Args:
@@ -66,7 +77,7 @@ This is a placeholder for the radio script prompt.
 Currently, your name is {self.BOT_NAME} ({self.BOT_PHONETIC_CALLSIGN}).
 """
 
-        if initial_prompt_type == "radio_script":
+        if initial_prompt_type == PROMPT_TYPE_RADIO_SCRIPT:
             self.SYSTEM_PROMPT = self.PROMPT_RADIO_SCRIPT
         else: # Default to original
             self.SYSTEM_PROMPT = self.PROMPT_ORIGINAL
@@ -125,7 +136,7 @@ if __name__ == '__main__':
     pm.print_context()
 
     print("\nInitializing with radio_script prompt type...")
-    pm_radio = PromptManager(initial_prompt_type="radio_script")
+    pm_radio = PromptManager(initial_prompt_type=PROMPT_TYPE_RADIO_SCRIPT)
     pm_radio.print_context()
     ctx_radio = pm_radio.add_operator_request_to_context("CQ CQ CQ, this is test station.")
     pm_radio.print_context()

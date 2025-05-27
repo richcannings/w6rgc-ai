@@ -8,6 +8,16 @@ import time
 import numpy as np
 from TTS.api import TTS
 import sounddevice as sd
+from constants import (
+    TEST_TTS_TEXT,
+    TTS_MODEL_FAST_PITCH,
+    TTS_MODEL_SPEEDY_SPEECH,
+    TTS_MODEL_TACOTRON2,
+    TEST_DURATION,
+    DEFAULT_DEVICE_SAMPLE_RATE,
+    TEST_FREQUENCY,
+    TEST_AMPLITUDE
+)
 
 def test_tts_performance():
     """Test TTS performance with different methods."""
@@ -15,14 +25,11 @@ def test_tts_performance():
     print("🧪 TTS Performance Test")
     print("=" * 50)
     
-    # Test text
-    test_text = "This is a test of the text to speech system. How does it sound?"
-    
     # Initialize TTS with different models
     models_to_test = [
-        "tts_models/en/ljspeech/fast_pitch",
-        "tts_models/en/ljspeech/speedy_speech", 
-        "tts_models/en/ljspeech/tacotron2-DDC"
+        TTS_MODEL_FAST_PITCH,
+        TTS_MODEL_SPEEDY_SPEECH, 
+        TTS_MODEL_TACOTRON2
     ]
     
     for model_name in models_to_test:
@@ -37,7 +44,7 @@ def test_tts_performance():
             
             # Test in-memory generation
             start_time = time.time()
-            audio_data = tts.tts(text=test_text)
+            audio_data = tts.tts(text=TEST_TTS_TEXT)
             generation_time = time.time() - start_time
             
             # Get sample rate
@@ -50,7 +57,7 @@ def test_tts_performance():
             
             # Test file-based generation
             start_time = time.time()
-            tts.tts_to_file(text=test_text, file_path="test_output.wav")
+            tts.tts_to_file(text=TEST_TTS_TEXT, file_path="test_output.wav")
             file_time = time.time() - start_time
             print(f"   ⏱️  File generation: {file_time:.2f}s")
             print(f"   📈 File vs Memory: {file_time/generation_time:.2f}x slower")
@@ -75,12 +82,12 @@ def test_audio_device_performance():
     print("=" * 30)
     
     # Generate test tone
-    duration = 2.0  # seconds
-    sample_rate = 22050
-    frequency = 440  # A4 note
+    duration = TEST_DURATION  # seconds
+    sample_rate = DEFAULT_DEVICE_SAMPLE_RATE
+    frequency = TEST_FREQUENCY  # A4 note
     
     t = np.linspace(0, duration, int(sample_rate * duration), False)
-    test_audio = 0.3 * np.sin(2 * np.pi * frequency * t)
+    test_audio = TEST_AMPLITUDE * np.sin(2 * np.pi * frequency * t)
     
     # Test different buffer sizes
     for blocksize in [512, 1024, 2048, 4096]:

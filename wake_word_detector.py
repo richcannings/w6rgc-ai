@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # wake_word_detector.py - Advanced wake word detection for ham radio AI assistant
 #
-# This module provides dual wake word detection methods for the K6DIT-AI system:
+# This module provides dual wake word detection methods for the W6RGC/AI system:
 #
 # 1. AST Method (Recommended for efficiency):
 #    - Uses MIT/ast-finetuned-speech-commands-v2 model
@@ -35,6 +35,22 @@ import torch
 import time
 import librosa
 from typing import Optional, Tuple
+from constants import (
+    DEFAULT_WAKE_WORD,
+    AST_CONFIDENCE_THRESHOLD,
+    AST_CHUNK_LENGTH_S,
+    AST_MODEL_NAME,
+    CUSTOM_WAKE_PHRASE,
+    CUSTOM_ENERGY_THRESHOLD,
+    CUSTOM_SILENCE_DURATION,
+    DEFAULT_DEVICE_SAMPLE_RATE,
+    WHISPER_TARGET_SAMPLE_RATE,
+    CUDA_DEVICE,
+    CPU_DEVICE,
+    WAKE_WORD_METHOD_AST,
+    WAKE_WORD_METHOD_CUSTOM,
+    AUDIO_FRAME_MS
+)
 
 class ASTWakeWordDetector:
     """
@@ -44,10 +60,10 @@ class ASTWakeWordDetector:
     """
     
     def __init__(self, 
-                 wake_word: str = "seven",
-                 confidence_threshold: float = 0.7,
-                 chunk_length_s: float = 1.0,
-                 device_sample_rate: int = 44100):
+                 wake_word: str = DEFAULT_WAKE_WORD,
+                 confidence_threshold: float = AST_CONFIDENCE_THRESHOLD,
+                 chunk_length_s: float = AST_CHUNK_LENGTH_S,
+                 device_sample_rate: int = DEFAULT_DEVICE_SAMPLE_RATE):
         """
         Initialize the AST wake word detector.
         
@@ -63,12 +79,12 @@ class ASTWakeWordDetector:
         self.device_sample_rate = device_sample_rate
         
         # Initialize the audio classification pipeline
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        device = CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE
         print(f"Loading AST wake word detector on {device}...")
         
         self.classifier = pipeline(
             "audio-classification", 
-            model="MIT/ast-finetuned-speech-commands-v2", 
+            model=AST_MODEL_NAME, 
             device=device
         )
         
@@ -154,10 +170,10 @@ class CustomWakeWordDetector:
     """
     
     def __init__(self, 
-                 wake_phrase: str = "Overlord",
-                 energy_threshold: float = 0.02,
-                 silence_duration: float = 1.5,
-                 device_sample_rate: int = 44100):
+                 wake_phrase: str = CUSTOM_WAKE_PHRASE,
+                 energy_threshold: float = CUSTOM_ENERGY_THRESHOLD,
+                 silence_duration: float = CUSTOM_SILENCE_DURATION,
+                 device_sample_rate: int = DEFAULT_DEVICE_SAMPLE_RATE):
         """
         Initialize custom wake word detector.
         

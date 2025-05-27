@@ -6,7 +6,7 @@ Assuming that "AI is the new electricity". Some day we will need a backup AI sys
 
 This experiment implements an AI backup in the form a voice assistant over ham radio. 
 
-W6RGC-AI is a Python-based voice assistant designed for amateur radio operators. It uses advanced wake word detection, speech-to-text, a large language model (LLM), and text-to-speech to provide a conversational AI experience, integrated with ham radio operations, including PTT (Push-to-Talk) control via a serial interface (e.g., for an AIOC adapter).
+W6RGC-AI is a Python-based voice assistant designed for amateur radio operators. It uses advanced wake word detection, speech-to-text, a large language model (LLM), and text-to-speech to provide a conversational AI experience, integrated with ham radio operations, including PTT (Push-to-Talk) control via a serial interface (e.g., for the [AIOC adapter](https://github.com/skuep/AIOC)).
 
 The assistant features dual wake word detection methods and listens for configurable wake words before processing commands or queries, making it suitable for hands-free operation in a radio shack environment.
 

@@ -2,9 +2,18 @@ import sounddevice as sd
 import serial
 import time
 import numpy as np
+from constants import (
+    DEFAULT_SERIAL_PORT,
+    SERIAL_TIMEOUT,
+    DEFAULT_AUDIO_CHANNELS,
+    WHISPER_TARGET_SAMPLE_RATE,
+    TEST_FREQUENCY,
+    TEST_DURATION,
+    TEST_AMPLITUDE
+)
 
 class RadioInterfaceLayerAIOC:
-    def __init__(self, serial_port_name="/dev/ttyACM0"):
+    def __init__(self, serial_port_name=DEFAULT_SERIAL_PORT):
         """
         Initializes the Radio Interface Layer for the AIOC.
         Detects the AIOC audio device and sets up PTT control.
@@ -31,17 +40,17 @@ class RadioInterfaceLayerAIOC:
                     print(f"Found AIOC device at index {i}: {device['name']}")
                     self.audio_device_index = i
                     self.device_name = device['name']
-                    self.samplerate = int(device.get('default_samplerate', 16000)) # Default to 16k if not specified
+                    self.samplerate = int(device.get('default_samplerate', WHISPER_TARGET_SAMPLE_RATE)) # Default to 16k if not specified
                     
                     # Determine input channels
                     # Prefer 'max_input_channels' but ensure it's at least 1 if device is valid input
                     # Some devices might report preferred channels as 0, so check max_input_channels
                     self.channels = device.get('max_input_channels', 0)
                     if self.channels == 0 and device.get('max_input_channels',0) > 0 : # Corrected this logic
-                        self.channels = 1 # Default to mono if max_input_channels > 0
+                        self.channels = DEFAULT_AUDIO_CHANNELS # Default to mono if max_input_channels > 0
                     elif self.channels == 0 : # if still 0, means no input channels
                          print(f"Warning: AIOC device {device['name']} reports 0 input channels despite max_input_channels > 0. Defaulting to 1 channel.")
-                         self.channels = 1 # Fallback if device has input capability but reports 0 channels.
+                         self.channels = DEFAULT_AUDIO_CHANNELS # Fallback if device has input capability but reports 0 channels.
 
                     if self.channels == 0: # Final check
                         raise RuntimeError(f"AIOC device {device['name']} has no usable input channels.")
@@ -60,7 +69,7 @@ class RadioInterfaceLayerAIOC:
         Raises Exception if connection fails.
         """
         try:
-            self.serial_conn = serial.Serial(port_name, timeout=1)
+            self.serial_conn = serial.Serial(port_name, timeout=SERIAL_TIMEOUT)
             print(f"Serial port {port_name} opened successfully for AIOC PTT.")
             self.serial_conn.setRTS(False)  # PTT Off
             self.serial_conn.setDTR(False)  # PTT Off (some radios use DTR)
@@ -191,7 +200,7 @@ if __name__ == '__main__':
         print("Attempting to initialize RadioInterfaceLayerAIOC...")
         # You might need to change "/dev/ttyACM0" to your actual AIOC serial port
         # or implement a discovery mechanism.
-        aioc_ril = RadioInterfaceLayerAIOC(serial_port_name="/dev/ttyACM0") 
+        aioc_ril = RadioInterfaceLayerAIOC(serial_port_name=DEFAULT_SERIAL_PORT) 
         print("RadioInterfaceLayerAIOC initialized successfully.")
         
         print(f"Device Index: {aioc_ril.get_audio_device_index()}")
@@ -210,10 +219,10 @@ if __name__ == '__main__':
         # Test Playback (requires a dummy audio signal)
         print("Testing playback (dummy sine wave)...")
         samplerate = aioc_ril.get_samplerate()
-        duration = 1.0  # seconds
-        frequency = 440  # Hz (A4 note)
+        duration = TEST_DURATION  # seconds
+        frequency = TEST_FREQUENCY  # Hz (A4 note)
         t = np.linspace(0, duration, int(samplerate * duration), False)
-        dummy_audio = 0.5 * np.sin(2 * np.pi * frequency * t)
+        dummy_audio = TEST_AMPLITUDE * np.sin(2 * np.pi * frequency * t)
         
         aioc_ril.play_audio(dummy_audio, samplerate)
         print("Playback test complete.")

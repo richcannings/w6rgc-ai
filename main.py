@@ -42,7 +42,6 @@ from scipy.signal import resample
 import time
 import requests
 import os
-# import serial # No longer directly used in main.py for PTT
 import json
 from TTS.api import TTS as CoquiTTS
 import re
@@ -55,14 +54,35 @@ from ril_aioc import RadioInterfaceLayerAIOC # New import
 
 ### CONSTANTS ###
 
-# Parameters for voice activity detection
-THRESHOLD = 0.02  # Adjust as needed for your mic/environment
-SILENCE_DURATION = 2.0  # seconds of silence to consider end of speech, originally 1.0
-FRAME_DURATION = 0.1  # seconds per audio frame
-
-# Parameters for using Ollama
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "gemma3:12b" #"gemma3:4b"  # Change to your preferred model
+from constants import (
+    # Audio processing constants
+    AUDIO_THRESHOLD,
+    SILENCE_DURATION,
+    FRAME_DURATION,
+    WHISPER_TARGET_SAMPLE_RATE,
+    
+    # AI/LLM configuration
+    OLLAMA_URL,
+    DEFAULT_MODEL,
+    
+    # TTS configuration
+    TTS_MODEL_FAST_PITCH,
+    TTS_MODEL_SPEEDY_SPEECH,
+    TTS_MODEL_TACOTRON2,
+    TTS_INFERENCE_NOISE_SCALE,
+    TTS_INFERENCE_NOISE_SCALE_DP,
+    TTS_INFERENCE_SIGMA,
+    TTS_OUTPUT_FILE,
+    
+    # Hardware configuration
+    DEFAULT_SERIAL_PORT,
+    
+    # Wake word detection
+    DEFAULT_WAKE_WORD_METHOD,
+    WAKE_WORD_METHOD_AST,
+    WAKE_WORD_METHOD_CUSTOM,
+    DEFAULT_WAKE_WORD
+)
 
 ### HELPER FUNCTIONS ###
 
@@ -80,7 +100,7 @@ def convert_ollama_response(response_text):
 
 def ask_ollama(prompt):
     payload = {
-        "model": MODEL,
+        "model": DEFAULT_MODEL,
         "prompt": prompt
     }
     response = requests.post(OLLAMA_URL, json=payload, stream=True)
@@ -137,16 +157,15 @@ def play_tts_audio(text_to_speak, tts_engine, aioc_interface):
     Optimized TTS audio playback with file-based fallback.
     Handles PTT, audio preparation, and uses RadioInterfaceLayerAIOC for sd.play().
     """
-    tts_wav_file = 'ollama_tts.wav'
     try:
         aioc_interface.reset_audio_device() # Reset before generating/playing audio
 
         print("🔊 Generating TTS audio (file-based fallback)...")
         tts_engine.tts_to_file(
             text=text_to_speak, 
-            file_path=tts_wav_file,
+            file_path=TTS_OUTPUT_FILE,
         )
-        tts_audio_data, tts_sample_rate = sf.read(tts_wav_file, dtype='float32')
+        tts_audio_data, tts_sample_rate = sf.read(TTS_OUTPUT_FILE, dtype='float32')
         
         if tts_audio_data.ndim > 1 and tts_audio_data.shape[1] > 1:
             tts_audio_data = np.mean(tts_audio_data, axis=1)
@@ -164,8 +183,8 @@ def play_tts_audio(text_to_speak, tts_engine, aioc_interface):
         print(f"❌ Error in TTS playback (main.py file-based): {e}")
     finally:
         aioc_interface.ptt_off() # Ensure PTT is off
-        if os.path.exists(tts_wav_file):
-            os.remove(tts_wav_file)
+        if os.path.exists(TTS_OUTPUT_FILE):
+            os.remove(TTS_OUTPUT_FILE)
         import gc
         if 'tts_audio_data' in locals():
             del tts_audio_data
@@ -187,16 +206,9 @@ def get_full_command_after_wake_word(aioc_interface, model):
     speech_started = False
     silence_counter = 0
     
-    # Use same parameters as before
-    FRAME_DURATION = 0.1
-    SILENCE_DURATION = 2.0
-    THRESHOLD = 0.02
-    
     # Get stream parameters from RIL
     stream_params = aioc_interface.get_input_stream_params()
     samplerate = stream_params['samplerate'] # Use RIL determined samplerate
-    # channels = stream_params['channels'] # Use RIL determined channels
-    # device_audio_index = stream_params['device'] # Use RIL determined device_index
 
     with sd.InputStream(**stream_params) as stream:
         while True:
@@ -204,7 +216,7 @@ def get_full_command_after_wake_word(aioc_interface, model):
             frame = np.squeeze(frame)
             amplitude = np.max(np.abs(frame))
             
-            if amplitude > THRESHOLD:
+            if amplitude > AUDIO_THRESHOLD:
                 if not speech_started:
                     print("🗣️  Speech detected, recording...")
                     speech_started = True
@@ -225,8 +237,8 @@ def get_full_command_after_wake_word(aioc_interface, model):
     audio = np.concatenate(recording)
     if audio.ndim > 1:
         audio = audio[:, 0]
-    if samplerate != 16000:
-        num_samples = int(len(audio) * 16000 / samplerate)
+    if samplerate != WHISPER_TARGET_SAMPLE_RATE:
+        num_samples = int(len(audio) * WHISPER_TARGET_SAMPLE_RATE / samplerate)
         audio = resample(audio, num_samples)
     
     # Transcribe with main Whisper model
@@ -242,7 +254,7 @@ def get_full_command_after_wake_word(aioc_interface, model):
 ## AIOC adapter setup
 # Initialize RadioInterfaceLayerAIOC
 try:
-    aioc_ril = RadioInterfaceLayerAIOC(serial_port_name="/dev/ttyACM0") # Or make configurable
+    aioc_ril = RadioInterfaceLayerAIOC(serial_port_name=DEFAULT_SERIAL_PORT) # Or make configurable
     # Get necessary info from the RIL instance
     audio_index = aioc_ril.get_audio_device_index()
     samplerate = aioc_ril.get_samplerate()
@@ -286,25 +298,25 @@ model = whisper.load_model("small")
 # Using FastSpeech2 which is much faster than Tacotron2 for real-time applications
 try:
     # Try FastSpeech2 first (fastest)
-    coqui_tts_engine = CoquiTTS(model_name="tts_models/en/ljspeech/fast_pitch", progress_bar=True, gpu=True)
+    coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_FAST_PITCH, progress_bar=True, gpu=True)
     print("✅ Using FastPitch TTS model (optimized for speed)")
 except:
     try:
         # Fallback to a simpler, faster model
-        coqui_tts_engine = CoquiTTS(model_name="tts_models/en/ljspeech/speedy_speech", progress_bar=True, gpu=True)
+        coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_SPEEDY_SPEECH, progress_bar=True, gpu=True)
         print("✅ Using SpeedySpeech TTS model (fast)")
     except:
         # Final fallback to original but with speed optimizations
-        coqui_tts_engine = CoquiTTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=True, gpu=True)
+        coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
         print("⚠️  Using Tacotron2-DDC (slower but reliable)")
         
 # Configure TTS for speed over quality
 if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthesizer, 'tts_config'):
     # Try to set faster inference settings
     try:
-        coqui_tts_engine.synthesizer.tts_config.inference_noise_scale = 0.667
-        coqui_tts_engine.synthesizer.tts_config.inference_noise_scale_dp = 1.0
-        coqui_tts_engine.synthesizer.tts_config.inference_sigma = 1.0
+        coqui_tts_engine.synthesizer.tts_config.inference_noise_scale = TTS_INFERENCE_NOISE_SCALE
+        coqui_tts_engine.synthesizer.tts_config.inference_noise_scale_dp = TTS_INFERENCE_NOISE_SCALE_DP
+        coqui_tts_engine.synthesizer.tts_config.inference_sigma = TTS_INFERENCE_SIGMA
         print("✅ TTS speed optimizations applied")
     except:
         print("⚠️  Could not apply TTS speed optimizations")
@@ -316,18 +328,18 @@ if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthes
 # Option 2: Use "Overlord" with custom detector (more flexible)
 
 # Choose detection method: "ast" or "custom"
-chosen_method = "ast" # Default to AST
-# chosen_method = "custom" # Uncomment to use custom wake word
+chosen_method = DEFAULT_WAKE_WORD_METHOD # Default to AST
+# chosen_method = WAKE_WORD_METHOD_CUSTOM # Uncomment to use custom wake word
 
-if chosen_method == "ast":
+if chosen_method == WAKE_WORD_METHOD_AST:
     wake_detector = wake_word_detector.create_wake_word_detector(
-        method="ast", 
+        method=WAKE_WORD_METHOD_AST, 
         device_sample_rate=samplerate,
-        wake_word="seven" # Explicitly set AST wake word
+        wake_word=DEFAULT_WAKE_WORD # Explicitly set AST wake word
     )
-elif chosen_method == "custom":
+elif chosen_method == WAKE_WORD_METHOD_CUSTOM:
     wake_detector = wake_word_detector.create_wake_word_detector(
-        method="custom", 
+        method=WAKE_WORD_METHOD_CUSTOM, 
         device_sample_rate=samplerate,
         wake_phrase=prompt_mgr.get_bot_name() # Pass bot name for custom wake phrase
     )
@@ -339,7 +351,7 @@ print("🚀 Ham Radio AI Assistant starting up...")
 print(f"Wake word detector: Ready (Method: {chosen_method})")
 print(f"Speech recognition: Whisper {model}")
 print(f"Text-to-speech: CoquiTTS")
-print(f"AI model: {MODEL}")
+print(f"AI model: {DEFAULT_MODEL}")
 print("=" * 50)
 
 while True:
