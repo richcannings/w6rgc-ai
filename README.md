@@ -1,9 +1,10 @@
-# W6RGC-AI: Ham Radio AI Voice Assistant running only local models
+# W6RGC-AI: Off Grid Ham Radio AI Voice Assistant
 
 ## Overview
 
+If "AI is the new electricity", then someday we'll need a backup AI buddy when communication systems go down. 
 
-If "AI is the new electricity", then someday we'll need a backup AI buddy when communication systems go down. That's where W6RGC-AI comes in.
+That's where W6RGC-AI comes in.
 
 W6RGC-AI is a voice assistant for ham radio operators that runs entirely on your local computer. No internet? No problem!
 
@@ -11,10 +12,10 @@ It's a Python-powered helper that uses a sequence of four AI models to understan
 
 1.  A smart wake word spotter (it listens for "seven" by default, but you can choose from over 35 options!)
 2.  Speech-to-text using Whisper (so it understands what you say)
-3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b)
+3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b). Plug in your own specialized models and prompts!
 4.  Coqui text-to-speech to give it a voice
 
-Right now, it's set up to work with ham radios using an [AIOC adapter](https://github.com/skuep/AIOC). Digirig compatibility coming soon.
+Right now, it's set up to work with ham radios using an [AIOC adapter](https://github.com/skuep/AIOC). Digirig compatibility coming soon. and 
 
 Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
 
@@ -56,10 +57,10 @@ The system is organized into several key modules:
 
 - **`main.py`**: Main application entry point and orchestration
 - **`constants.py`**: Centralized configuration management for all settings
+- **`commands.py`**: Command identification and parsing for voice commands (status, reset, terminate)
 - **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
 - **`prompts.py`**: AI persona and conversation management (class-based)
 - **`wake_word_detector.py`**: AST-based wake word detection system
-- **`test_tts_performance.py`**: Performance testing and optimization tools
 
 ## Wake Word Detection
 
@@ -158,15 +159,6 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
 
 The application uses a centralized configuration system through `constants.py`. Key configuration sections include:
 
-### Audio Processing Constants
-```python
-AUDIO_THRESHOLD = 0.02          # Voice activity detection sensitivity
-SILENCE_DURATION = 2.0          # Seconds of silence to mark end of speech
-FRAME_DURATION = 0.1            # Audio frame duration for processing
-WHISPER_TARGET_SAMPLE_RATE = 16000  # Target sample rate for Whisper
-DEFAULT_DEVICE_SAMPLE_RATE = 44100  # Standard audio device sample rate
-```
-
 ### AI/LLM Configuration
 ```python
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -175,15 +167,12 @@ DEFAULT_MODEL = "gemma3:12b"    # Ollama model to use
 
 ### Wake Word Detection
 ```python
-DEFAULT_WAKE_WORD = "seven"     # AST wake word (choose from 35+ options)
-AST_CONFIDENCE_THRESHOLD = 0.7  # Detection confidence threshold
-WAKE_WORD_METHOD_AST = "ast"    # Detection method
+DEFAULT_WAKE_WORD = "seven"     # AST wake word and must be the bots name (choose from 35+ options)
 ```
 
 ### Hardware Configuration
 ```python
 DEFAULT_SERIAL_PORT = "/dev/ttyACM0"  # Serial port for PTT control
-SERIAL_TIMEOUT = 1              # Serial communication timeout
 ```
 
 ### Bot Identity (also configurable in prompts.py)
@@ -211,16 +200,16 @@ TTS_MODEL_TACOTRON2 = "tts_models/en/ljspeech/tacotron2-DDC"   # Fallback model
 
 The project includes several testing utilities:
 
-- **`test_tts_performance.py`**: Performance testing for TTS models
 - **Wake word testing**: Built-in debug modes in wake word detector
 - **Module testing**: Each module includes `if __name__ == "__main__"` test sections
+- **Command testing**: Test voice command recognition with `commands.py`
 
 To test individual components:
 ```bash
-python test_tts_performance.py    # Test TTS performance
 python ril_aioc.py                # Test AIOC hardware interface
 python prompts.py                 # Test prompt management
 python wake_word_detector.py      # Test wake word detection
+python commands.py                # Test command identification
 ```
 
 ## Troubleshooting
@@ -235,14 +224,15 @@ python wake_word_detector.py      # Test wake word detection
 
 ## Future Enhancements
 
-*   More robust error handling and recovery
-*   GUI for easier configuration and status monitoring
-*   Additional wake word detection engines
-*   Dynamic loading of AI personas
+*   Digirig compatibility
+*   Automatic RIL detection
 *   Voice APRS integration
-*   Offline LLM support for emergency scenarios
-*   Web-based configuration interface
-*   Multi-language support
+*   Custom wake words
+*   Add modularity and a command to switch from offline mode (gemma) to online mode (Gemini or ChatGPT)
+*   More robust error handling and recovery
+*   Dynamic loading of AI personas
+*   Offline LLM support for emergency scenarios. Create an LLM with knowledge of FEMA, ARES, and other emergency services.
+*   Offline multi-language and translation support
 
 ## Contributing
 
