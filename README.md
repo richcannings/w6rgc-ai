@@ -4,7 +4,7 @@
 
 Assuming that "AI is the new electricity". Some day we will need a backup AI system.
 
-This experiment implements an AI backup in the form a voice assistant over ham radio. 
+This experiment implements an AI backup in the form a voice assistant over ham radio and running solely on local models. Thus, not requiring the Internet. 
 
 W6RGC-AI is a Python-based voice assistant designed for amateur radio operators. It uses advanced wake word detection, speech-to-text, a large language model (LLM), and text-to-speech to provide a conversational AI experience, integrated with ham radio operations, including PTT (Push-to-Talk) control via a serial interface (e.g., for the [AIOC adapter](https://github.com/skuep/AIOC)).
 
@@ -36,10 +36,23 @@ One example (and my next project) is "Voice APRS" with the features to:
 *   **Natural Text-to-Speech:** Employs CoquiTTS for generating spoken responses with CUDA acceleration
 *   **Automatic Audio Device Detection:** Automatically finds and configures AIOC (All-In-One-Cable) adapters
 *   **Sample Rate Conversion:** Handles audio conversion between device rates (48kHz) and model requirements (16kHz)
+*   **Modular Architecture:** Clean separation of concerns with dedicated modules for hardware, prompts, and constants
+*   **Centralized Configuration:** All settings managed through `constants.py` for easy customization
 *   **Customizable Persona:** AI's name, callsign, and speaking style can be configured in `prompts.py`
 *   **Contextual Conversation:** Maintains conversation history for more natural interactions
 *   **PTT Control:** Integrates with serial PTT for transmitting AI responses over the air
 *   **Graceful Termination:** Recognizes voice commands like "break", "exit", "quit", or "shutdown" to gracefully shut down
+
+## Architecture
+
+The system is organized into several key modules:
+
+- **`main.py`**: Main application entry point and orchestration
+- **`constants.py`**: Centralized configuration management for all settings
+- **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
+- **`prompts.py`**: AI persona and conversation management (class-based)
+- **`wake_word_detector.py`**: Dual wake word detection system
+- **`test_tts_performance.py`**: Performance testing and optimization tools
 
 ## Wake Word Detection
 
@@ -48,7 +61,7 @@ The system supports two wake word detection methods:
 - **AST Method:** Uses MIT's pre-trained model with 35+ available wake words (currently "seven")
 - **Custom Method:** Uses Whisper for flexible custom phrases (currently "Overlord")
 
-The default configuration uses the AST method for efficiency. To change methods or wake words, modify the detector initialization in `main.py`.
+The default configuration uses the AST method for efficiency. To change methods or wake words, modify the settings in `constants.py`.
 
 ## Technologies Used
 
@@ -112,10 +125,15 @@ The default configuration uses the AST method for efficiency. To change methods 
 ## Usage
 
 1.  **Configure the application:**
-    *   Review and modify parameters in `main.py` such as `THRESHOLD`, `SILENCE_DURATION`, `OLLAMA_URL`, and `MODEL`
-    *   The system automatically detects AIOC hardware, but you can manually set `serial_port` if needed
-    *   Customize the AI's persona and prompts in `prompts.py`
-    *   Choose your wake word detection method in `main.py`
+    *   **Primary Configuration**: Edit `constants.py` to modify all application settings:
+      - Audio processing parameters (thresholds, sample rates)
+      - Wake word detection settings
+      - Hardware configuration (serial ports)
+      - AI/LLM settings (Ollama URL, model selection)
+      - TTS configuration (models, audio settings)
+      - Bot identity (name, callsign, persona)
+    *   **Advanced Configuration**: Customize AI persona and prompts in `prompts.py`
+    *   The system automatically detects AIOC hardware, but you can manually set serial port in `constants.py`
 
 2.  **Run the main script:**
     ```bash
@@ -131,27 +149,49 @@ The default configuration uses the AST method for efficiency. To change methods 
 
 ## Configuration
 
-Key configuration files and variables:
+The application uses a centralized configuration system through `constants.py`. Key configuration sections include:
 
-*   **`main.py`:**
-    *   `THRESHOLD`: Voice activity detection sensitivity (default: 0.02)
-    *   `SILENCE_DURATION`: Duration of silence to mark end of speech (default: 2.0 seconds)
-    *   `FRAME_DURATION`: Audio frame duration for VAD (default: 0.1 seconds)
-    *   `OLLAMA_URL`: URL of your Ollama server (default: "http://localhost:11434/api/generate")
-    *   `MODEL`: The Ollama model to use (default: "gemma3:12b")
-    *   Wake word detector type: "ast" or "custom"
+### Audio Processing Constants
+```python
+AUDIO_THRESHOLD = 0.02          # Voice activity detection sensitivity
+SILENCE_DURATION = 2.0          # Seconds of silence to mark end of speech
+FRAME_DURATION = 0.1            # Audio frame duration for processing
+WHISPER_TARGET_SAMPLE_RATE = 16000  # Target sample rate for Whisper
+DEFAULT_DEVICE_SAMPLE_RATE = 44100  # Standard audio device sample rate
+```
 
-*   **`prompts.py`:**
-    *   `BOT_NAME`: The AI's name in conversation (default: "7")
-    *   `BOT_CALLSIGN`: The AI's amateur radio callsign (default: "W6RGC/AI")
-    *   `BOT_SPOKEN_CALLSIGN`: How the callsign should be spoken phonetically
-    *   `BOT_PHONETIC_CALLSIGN`: The verbose phonetic spelling of the callsign
-    *   `PROMPT_ORIGINAL`: The base system prompt that defines the AI's persona and behavior
+### AI/LLM Configuration
+```python
+OLLAMA_URL = "http://localhost:11434/api/generate"
+DEFAULT_MODEL = "gemma3:12b"    # Ollama model to use
+```
 
-*   **`wake_word_detector.py`:**
-    *   AST wake word selection (35+ options available)
-    *   Custom wake word phrases
-    *   Detection sensitivity and timing parameters
+### Wake Word Detection
+```python
+DEFAULT_WAKE_WORD = "seven"     # AST wake word
+CUSTOM_WAKE_PHRASE = "Overlord" # Custom wake phrase
+DEFAULT_WAKE_WORD_METHOD = "ast" # Detection method: "ast" or "custom"
+```
+
+### Hardware Configuration
+```python
+DEFAULT_SERIAL_PORT = "/dev/ttyACM0"  # Serial port for PTT control
+SERIAL_TIMEOUT = 1              # Serial communication timeout
+```
+
+### Bot Identity (also configurable in prompts.py)
+```python
+BOT_NAME = "7"                  # Bot's name in conversation
+BOT_CALLSIGN = "W6RGC/AI"      # Amateur radio callsign
+BOT_PHONETIC_CALLSIGN = "Whiskey 6 Radio Golf Charlie Stroke Artificial Intelligence"
+```
+
+### TTS Configuration
+```python
+TTS_MODEL_FAST_PITCH = "tts_models/en/ljspeech/fast_pitch"     # Fastest TTS model
+TTS_MODEL_SPEEDY_SPEECH = "tts_models/en/ljspeech/speedy_speech" # Alternative fast model
+TTS_MODEL_TACOTRON2 = "tts_models/en/ljspeech/tacotron2-DDC"   # Fallback model
+```
 
 ## Hardware Requirements
 
@@ -160,23 +200,41 @@ Key configuration files and variables:
 *   **Audio:** AIOC (All-In-One-Cable) adapter or compatible USB audio interface
 *   **Serial:** USB serial port for PTT control (typically /dev/ttyACM0 or /dev/ttyACM1)
 
+## Testing and Development
+
+The project includes several testing utilities:
+
+- **`test_tts_performance.py`**: Performance testing for TTS models
+- **Wake word testing**: Built-in debug modes in wake word detectors
+- **Module testing**: Each module includes `if __name__ == "__main__"` test sections
+
+To test individual components:
+```bash
+python test_tts_performance.py    # Test TTS performance
+python ril_aioc.py                # Test AIOC hardware interface
+python prompts.py                 # Test prompt management
+python wake_word_detector.py      # Test wake word detection
+```
+
 ## Troubleshooting
 
-*   **Wake word not detected:** Try adjusting `THRESHOLD` in main.py or test with `test_wake_word.py`
+*   **Wake word not detected:** Try adjusting `AUDIO_THRESHOLD` in `constants.py` or test with wake word detector debug mode
 *   **Serial port errors:** Ensure user is in `dialout` group and device is connected
 *   **Audio device not found:** Check USB connections and run `python -c "import sounddevice; print(sounddevice.query_devices())"`
 *   **CUDA errors:** Install appropriate PyTorch version for your CUDA version
 *   **Ollama connection errors:** Ensure Ollama service is running with `systemctl status ollama`
+*   **Configuration issues:** All settings are centralized in `constants.py` - check this file first
 
 ## Future Enhancements
 
 *   More robust error handling and recovery
-*   Configuration file (e.g., YAML or JSON) instead of hardcoded variables
 *   GUI for easier configuration and status monitoring
 *   Additional wake word detection engines
 *   Dynamic loading of AI personas
 *   Voice APRS integration
 *   Offline LLM support for emergency scenarios
+*   Web-based configuration interface
+*   Multi-language support
 
 ## Contributing
 
