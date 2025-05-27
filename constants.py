@@ -1,3 +1,15 @@
+# W6RGC-AI: Off Grid Ham Radio AI Voice Assistant
+#
+# Author: Rich Cannings <rcannings@gmail.com>
+# License: Apache License, Version 2.0
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Description:
+# This file centralizes all configuration values, thresholds, and constants
+# used throughout the W6RGC-AI voice assistant application. It helps in
+# managing settings for audio processing, wake word detection, hardware,
+# AI/LLM integration, TTS, and other modules from a single location.
+#
 """
 Constants for the W6RGC AI Ham Radio Assistant
 
@@ -32,6 +44,9 @@ CARRIER_SENSE_RETRY_DELAY = 3.0  # seconds to wait between carrier sense attempt
 
 # Periodic Identification Configuration
 PERIODIC_ID_INTERVAL_MINUTES = 10  # minutes between automatic identification announcements
+
+# Command Detection Configuration
+MAX_COMMAND_WORDS = 10  # maximum words to check for commands (prevents accidental triggers)
 
 # Audio Sample Rates
 WHISPER_TARGET_SAMPLE_RATE = 16000  # Whisper expects 16kHz

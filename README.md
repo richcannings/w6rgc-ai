@@ -22,7 +22,7 @@ Just say the wake word (like "seven") and then tell it what you need. It's desig
 You can also use voice commands like:
 - **"Status" or "Report"**: Say "seven, status" or "seven, report" to find out which AI model is active and the assistant's callsign.
 - **"Reset" or "New Chat"**: Say "seven, reset" or "seven, start a new chat" to wipe the conversation slate clean.
-- **"Identify"**: Say "seven, identify", "identify", "call sign", "what is your call sign", or "who are you" to hear the assistant's phonetic callsign.
+- **"Identify"**: Say "seven, identify" or other phrases like "identify", "call sign", "what is your call sign", or "who are you" to hear the assistant's phonetic callsign.
 - **"Terminate"**: Say "seven, break" or "seven, exit" to shut down the assistant.
 
 ## Purpose
@@ -170,6 +170,7 @@ DEFAULT_MODEL = "gemma3:12b"    # Ollama model to use
 ### Wake Word Detection
 ```python
 DEFAULT_WAKE_WORD = "seven"     # AST wake word and must be the bots name (choose from 35+ options)
+MAX_COMMAND_WORDS = 10          # Max words to check for commands (prevents accidental triggers)
 ```
 
 ### Hardware Configuration

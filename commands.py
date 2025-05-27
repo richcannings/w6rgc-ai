@@ -1,8 +1,22 @@
+# W6RGC-AI: Off Grid Ham Radio AI Voice Assistant
+#
+# Author: Richochet <richochet@example.com>  TODO: Replace with actual email
+# License: Apache License, Version 2.0
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Description:
+# This module handles the identification and parsing of voice commands
+# for the W6RGC-AI voice assistant. It checks for specific keywords
+# to trigger actions like termination, status reports, chat resets,
+# and identification.
+#
 import re
+from constants import MAX_COMMAND_WORDS
 
 def handle_command(operator_text, prompt_mgr):
     """
     Identifies known commands from the operator_text.
+    Only checks the first MAX_COMMAND_WORDS words to prevent commands from being triggered later in conversations.
 
     Args:
         operator_text (str): The transcribed text from the operator.
@@ -12,25 +26,33 @@ def handle_command(operator_text, prompt_mgr):
         str: Command type ("terminate", "status", "reset", "identify") or None if no command is matched.
     """
     bot_name = prompt_mgr.get_bot_name() # Get bot_name once
+    
+    # Only check the first MAX_COMMAND_WORDS words to prevent accidental command triggers in conversations
+    words = operator_text.split()
+    first_words = ' '.join(words[:MAX_COMMAND_WORDS])
+    print(f"🔍 Checking for commands in first {MAX_COMMAND_WORDS} words: '{first_words}'")
+    
+    # Use the truncated text for command detection
+    text_to_check = first_words
 
     # Check for termination command
-    if re.search(rf"{re.escape(bot_name)}.*?\b(break|brake|exit|quit|shutdown)\b", operator_text, re.IGNORECASE):
+    if re.search(rf"{re.escape(bot_name)}.*?\b(break|brake|exit|quit|shutdown)\b", text_to_check, re.IGNORECASE):
         print("🛑 Termination command detected by commands.py.")
         return "terminate"
 
     # Check for status command
-    if re.search(rf"{re.escape(bot_name)}.*?\b(status|report)\b", operator_text, re.IGNORECASE):
+    if re.search(rf"{re.escape(bot_name)}.*?\b(status|report)\b", text_to_check, re.IGNORECASE):
         print("⚙️ Status command detected by commands.py.")
         return "status"
 
     # Check for reset/new chat command
-    if re.search(rf"{re.escape(bot_name)}.*?\b(reset|start a new chat|new chat)\b", operator_text, re.IGNORECASE):
+    if re.search(rf"{re.escape(bot_name)}.*?\b(reset|start a new chat|new chat)\b", text_to_check, re.IGNORECASE):
         print("🔄 Reset command detected by commands.py.")
         return "reset"
 
     # Check for identify command
-    if re.search(rf"{re.escape(bot_name)}.*?\b(identify)\b", operator_text, re.IGNORECASE) or \
-       re.search(r"\b(identify|call sign|what is your call sign|who are you)\b", operator_text, re.IGNORECASE):
+    if re.search(rf"{re.escape(bot_name)}.*?\b(identify)\b", text_to_check, re.IGNORECASE) or \
+       re.search(r"\b(identify|call sign|what is your call sign|who are you)\b", text_to_check, re.IGNORECASE):
         print("🆔 Identify command detected by commands.py.")
         return "identify"
         

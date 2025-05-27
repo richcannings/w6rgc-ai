@@ -2,7 +2,7 @@
 
 All notable changes to the W6RGC-AI Ham Radio Voice Assistant project will be documented in this file.
 
-## [2.2.0] - 2025-01-XX
+## [2.2.0] - 2025-05-27
 
 ### Removed - Simplified Wake Word Detection
 
@@ -30,6 +30,9 @@ All notable changes to the W6RGC-AI Ham Radio Voice Assistant project will be do
 - **Better Maintainability**: Single code path for wake word detection
 - **Improved Documentation**: Clearer documentation focusing on supported features
 - **Faster Startup**: No need to load additional Whisper models for wake word detection
+
+### Added - Command Detection Refinement
+- **`MAX_COMMAND_WORDS` Constant**: Introduced `MAX_COMMAND_WORDS` in `constants.py` to limit the number of words checked for voice commands. This prevents accidental command triggers during extended speech by only analyzing the beginning of an utterance for commands. Updated `commands.py` to use this constant.
 
 ## [2.1.0] - 2025-01-XX
 
