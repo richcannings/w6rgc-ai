@@ -30,6 +30,9 @@ CARRIER_SENSE_DURATION = 0.5  # seconds to monitor for carrier before PTT
 CARRIER_SENSE_MAX_RETRIES = 3  # maximum attempts to find clear frequency
 CARRIER_SENSE_RETRY_DELAY = 3.0  # seconds to wait between carrier sense attempts
 
+# Periodic Identification Configuration
+PERIODIC_ID_INTERVAL_MINUTES = 10  # minutes between automatic identification announcements
+
 # Audio Sample Rates
 WHISPER_TARGET_SAMPLE_RATE = 16000  # Whisper expects 16kHz
 DEFAULT_DEVICE_SAMPLE_RATE = 44100  # Standard audio device sample rate

@@ -76,6 +76,7 @@ from prompts import PromptManager
 import commands # Import the new commands module
 
 from ril_aioc import RadioInterfaceLayerAIOC # New import
+from periodically_identify import PeriodicIdentifier # New import for periodic ID
 
 ### CONSTANTS ###
 
@@ -333,12 +334,22 @@ wake_detector = wake_word_detector.create_wake_word_detector(
     wake_word=DEFAULT_WAKE_WORD
 )
 
+# Initialize periodic identifier
+periodic_identifier = PeriodicIdentifier(
+    tts_engine=coqui_tts_engine,
+    aioc_interface=aioc_ril,
+    play_tts_function=play_tts_audio  # Use the file-based method for reliability
+)
+
 print("🚀 Ham Radio AI Assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper {model}")
 print(f"Text-to-speech: CoquiTTS")
 print(f"AI model: {DEFAULT_MODEL}")
 print("=" * 50)
+
+# Start periodic identification
+periodic_identifier.start()
 
 while True:
     try:
@@ -369,8 +380,8 @@ while True:
 
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")
-            play_tts_audio(f"Terminating. Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down. " +
-                "I am shutting down my processes. I am clear. Seven three.", coqui_tts_engine, aioc_ril)
+            play_tts_audio(f"Terminating. Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down my " +
+                           "processes. I am clear. Seven three.", coqui_tts_engine, aioc_ril)
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
@@ -415,4 +426,5 @@ while True:
         continue
 
 print("🏁 Ham Radio AI Assistant shutdown complete.")
+periodic_identifier.stop() # Stop periodic identification
 aioc_ril.close() # Close the RIL (which closes serial conn)
