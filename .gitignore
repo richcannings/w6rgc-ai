@@ -33,6 +33,7 @@ venv.bak/
 *.mp3
 *.flac
 ollama_tts.wav
+ril_tts_temp.wav
 
 # IDE
 .vscode/
