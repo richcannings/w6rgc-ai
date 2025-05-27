@@ -42,15 +42,16 @@ from scipy.signal import resample
 import time
 import requests
 import os
-import serial
+# import serial # No longer directly used in main.py for PTT
 import json
 from TTS.api import TTS as CoquiTTS
 import re
 import wake_word_detector
 
 import prompts
-from prompts import BOT_NAME 
-from prompts import BOT_PHONETIC_CALLSIGN
+from prompts import PromptManager
+
+from ril_aioc import RadioInterfaceLayerAIOC # New import
 
 ### CONSTANTS ###
 
@@ -64,26 +65,6 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "gemma3:12b" #"gemma3:4b"  # Change to your preferred model
 
 ### HELPER FUNCTIONS ###
-
-def find_aioc_device_index():
-    """
-    Find the audio device index for the AIOC (All-In-One-Cable) adapter.
-    Returns the device index if found, otherwise raises an exception.
-    """
-    devices = sd.query_devices()
-    for i, device in enumerate(devices):
-        if "All-In-One-Cable" in device['name']:
-            # Verify it has both input and output capabilities
-            if device['max_input_channels'] > 0 and device['max_output_channels'] > 0:
-                print(f"Found AIOC device at index {i}: {device['name']}")
-                return i
-    
-    # If not found, list available devices to help with debugging
-    print("AIOC device not found. Available audio devices:")
-    for i, device in enumerate(devices):
-        print(f"  Device {i}: {device['name']} (in:{device['max_input_channels']}, out:{device['max_output_channels']})")
-    
-    raise RuntimeError("AIOC (All-In-One-Cable) device not found. Please check your USB connection.")
 
 def convert_ollama_response(response_text):
     try:
@@ -111,170 +92,96 @@ def ask_ollama(prompt):
             result += data.get("response", "")
     return result
 
-def reset_audio_device(device_index):
-    """
-    Reset audio device to prevent conflicts between recording and playback.
-    """
-    try:
-        # Stop any ongoing audio operations
-        sd.stop()
-        
-        # Small delay to let the device reset
-        time.sleep(0.1)
-        
-        # Query device to ensure it's responsive
-        device_info = sd.query_devices(device_index)
-        
-        return True
-    except Exception as e:
-        print(f"⚠️  Audio device reset warning: {e}")
-        return False
-
-def play_tts_audio_fast(text_to_speak, tts_engine, serial_conn, audio_device_index):
+def play_tts_audio_fast(text_to_speak, tts_engine, aioc_interface):
     """
     Ultra-fast TTS audio playback using in-memory processing (no file I/O).
-    This should eliminate stuttering issues caused by disk operations.
+    Handles PTT, audio preparation, and uses RadioInterfaceLayerAIOC for sd.play().
     """
     try:
-        # Clear any existing audio buffers
-        sd.stop()
+        aioc_interface.reset_audio_device() # Reset before generating/playing audio
         
         print("🔊 Generating TTS audio (in-memory)...")
-        
-        # Generate TTS audio directly to numpy array (much faster than file I/O)
         tts_audio_data = tts_engine.tts(text=text_to_speak)
-        
-        # Get sample rate from the TTS engine
         tts_sample_rate = tts_engine.synthesizer.output_sample_rate
         
-        # Convert to numpy array if needed
         if not isinstance(tts_audio_data, np.ndarray):
             tts_audio_data = np.array(tts_audio_data, dtype=np.float32)
         
-        # Ensure audio is mono (some TTS models output stereo)
-        if tts_audio_data.ndim > 1:
+        if tts_audio_data.ndim > 1 and tts_audio_data.shape[1] > 1:
             tts_audio_data = np.mean(tts_audio_data, axis=1)
         
-        # Normalize audio to prevent clipping
         max_val = np.max(np.abs(tts_audio_data))
         if max_val > 0:
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
-        print(f"🔊 Playing audio ({len(tts_audio_data)/tts_sample_rate:.1f}s)...")
-        
-        # PTT on
-        serial_conn.setRTS(True)
-        serial_conn.setDTR(True)
-        time.sleep(0.2)  # Reduced PTT delay
-        
-        # Play audio with explicit device and blocking
-        sd.play(
-            tts_audio_data, 
-            tts_sample_rate, 
-            device=audio_device_index,
-            blocking=True  # Use blocking for better reliability
-        )
-        
-        # Small delay before PTT off
-        time.sleep(0.1)
-        
-        # PTT off
-        serial_conn.setRTS(False)
-        serial_conn.setDTR(False)
-        
-        # Force garbage collection to prevent memory accumulation
-        import gc
-        del tts_audio_data  # Explicitly delete large array
-        gc.collect()
-        
-        print("✅ Audio transmission complete (fast mode)")
+        print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
+        aioc_interface.ptt_on()
+        time.sleep(0.2) # PTT engage delay
+        aioc_interface.play_audio(tts_audio_data, tts_sample_rate)
         
     except Exception as e:
-        print(f"❌ Error in fast TTS playback: {e}")
+        print(f"❌ Error in fast TTS playback (main.py): {e}")
         print("🔄 Falling back to file-based method...")
-        # Fallback to original method
-        play_tts_audio(text_to_speak, tts_engine, serial_conn, audio_device_index)
+        play_tts_audio(text_to_speak, tts_engine, aioc_interface) # Fallback already handles PTT
+    finally:
+        aioc_interface.ptt_off() # Ensure PTT is off
+        # Force garbage collection to prevent memory accumulation
+        import gc
+        if 'tts_audio_data' in locals():
+            del tts_audio_data
+        gc.collect()
+        print("✅ Audio transmission cycle complete (fast mode). PTT OFF.")
 
-def play_tts_audio(text_to_speak, tts_engine, serial_conn, audio_device_index):
+def play_tts_audio(text_to_speak, tts_engine, aioc_interface):
     """
-    Optimized TTS audio playback with better performance and buffer management.
+    Optimized TTS audio playback with file-based fallback.
+    Handles PTT, audio preparation, and uses RadioInterfaceLayerAIOC for sd.play().
     """
+    tts_wav_file = 'ollama_tts.wav'
     try:
-        # Clear any existing audio buffers
-        sd.stop()
-        
-        # Generate TTS audio in memory (faster than file I/O)
-        print("🔊 Generating TTS audio...")
-        tts_wav_file = 'ollama_tts.wav'
-        
-        # Use faster, lower quality settings for better real-time performance
+        aioc_interface.reset_audio_device() # Reset before generating/playing audio
+
+        print("🔊 Generating TTS audio (file-based fallback)...")
         tts_engine.tts_to_file(
             text=text_to_speak, 
             file_path=tts_wav_file,
-            # Add speed optimization parameters if supported
         )
-        
-        # Load audio data
         tts_audio_data, tts_sample_rate = sf.read(tts_wav_file, dtype='float32')
         
-        # Ensure audio is mono (some TTS models output stereo)
-        if tts_audio_data.ndim > 1:
+        if tts_audio_data.ndim > 1 and tts_audio_data.shape[1] > 1:
             tts_audio_data = np.mean(tts_audio_data, axis=1)
         
-        # Normalize audio to prevent clipping
         max_val = np.max(np.abs(tts_audio_data))
         if max_val > 0:
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
-        print(f"🔊 Playing audio ({len(tts_audio_data)/tts_sample_rate:.1f}s)...")
-        
-        # PTT on
-        serial_conn.setRTS(True)
-        serial_conn.setDTR(True)
-        time.sleep(0.3)  # Reduced PTT delay
-        
-        # Play audio with explicit device and blocking
-        sd.play(
-            tts_audio_data, 
-            tts_sample_rate, 
-            device=audio_device_index,
-            blocking=True  # Use blocking instead of sd.wait() for better reliability
-        )
-        
-        # Small delay before PTT off
-        time.sleep(0.2)
-        
-        # PTT off
-        serial_conn.setRTS(False)
-        serial_conn.setDTR(False)
-        
-        # Clean up
-        os.remove(tts_wav_file)
-        
-        # Force garbage collection to prevent memory accumulation
-        import gc
-        gc.collect()
-        
-        print("✅ Audio transmission complete")
-        
-    except Exception as e:
-        print(f"❌ Error in TTS playback: {e}")
-        # Ensure PTT is off even if there's an error
-        serial_conn.setRTS(False)
-        serial_conn.setDTR(False)
-        # Clean up file if it exists
-        if os.path.exists('ollama_tts.wav'):
-            os.remove('ollama_tts.wav')
+        print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
+        aioc_interface.ptt_on()
+        time.sleep(0.3) # PTT engage delay (slightly longer for file method just in case)
+        aioc_interface.play_audio(tts_audio_data, tts_sample_rate)
 
-def get_full_command_after_wake_word(audio_index, samplerate, channels, model):
+    except Exception as e:
+        print(f"❌ Error in TTS playback (main.py file-based): {e}")
+    finally:
+        aioc_interface.ptt_off() # Ensure PTT is off
+        if os.path.exists(tts_wav_file):
+            os.remove(tts_wav_file)
+        import gc
+        if 'tts_audio_data' in locals():
+            del tts_audio_data
+        gc.collect()
+        print("✅ Audio transmission cycle complete (file-based). PTT OFF.")
+
+def get_full_command_after_wake_word(aioc_interface, model):
     """
     Record and transcribe the full command after wake word detection.
     Uses the existing Whisper model for high-quality transcription.
+    Uses RadioInterfaceLayerAIOC for audio input stream parameters.
     """
     print("🎤 Recording your command...")
     
     # Reset audio device to ensure clean recording
-    reset_audio_device(audio_index)
+    aioc_interface.reset_audio_device()
     
     recording = []
     speech_started = False
@@ -285,7 +192,13 @@ def get_full_command_after_wake_word(audio_index, samplerate, channels, model):
     SILENCE_DURATION = 2.0
     THRESHOLD = 0.02
     
-    with sd.InputStream(samplerate=samplerate, channels=channels, device=audio_index, dtype='float32') as stream:
+    # Get stream parameters from RIL
+    stream_params = aioc_interface.get_input_stream_params()
+    samplerate = stream_params['samplerate'] # Use RIL determined samplerate
+    # channels = stream_params['channels'] # Use RIL determined channels
+    # device_audio_index = stream_params['device'] # Use RIL determined device_index
+
+    with sd.InputStream(**stream_params) as stream:
         while True:
             frame, _ = stream.read(int(FRAME_DURATION * samplerate))
             frame = np.squeeze(frame)
@@ -327,24 +240,44 @@ def get_full_command_after_wake_word(audio_index, samplerate, channels, model):
 ### INITIALIZATION ###
 
 ## AIOC adapter setup
-# audio_index will be determined automatically by find_aioc_device_index()
-# Find and set up microphone and output device for AIOC adapter
-audio_index = find_aioc_device_index()
-device_info = sd.query_devices(audio_index)
-samplerate = int(device_info['default_samplerate'])
-channels = 1 # TODO: query the device for the number of channels
-# Set up serial port for AIOC adapter
-# One can find the AIOC adapter by running "ls /dev/ttyACM*" for the com port, 
-# and "aplay -l" for the audio device index.
-serial_port = "/dev/ttyACM0" # TODO: query the operating system for the serial port
+# Initialize RadioInterfaceLayerAIOC
 try:
-    ser = serial.Serial(serial_port, timeout=1)  # Open serial port (adjust baud rate if needed)
-    print("Serial port opened successfully.")
-    ser.setRTS(False)
-    ser.setDTR(False)
-except Exception as e:
-    print(f"[ERROR] Failed to open serial port: {e}")
+    aioc_ril = RadioInterfaceLayerAIOC(serial_port_name="/dev/ttyACM0") # Or make configurable
+    # Get necessary info from the RIL instance
+    audio_index = aioc_ril.get_audio_device_index()
+    samplerate = aioc_ril.get_samplerate()
+    channels = aioc_ril.get_channels()
+    # serial_conn is now managed by aioc_ril, no 'ser' variable here
+except RuntimeError as e:
+    print(f"[CRITICAL ERROR] Could not initialize AIOC Radio Interface Layer: {e}")
+    print("The application cannot continue without the AIOC. Please check connections and configurations.")
     exit()
+except Exception as e:
+    print(f"[CRITICAL ERROR] An unexpected error occurred during AIOC RIL initialization: {e}")
+    exit()
+
+# audio_index will be determined automatically by find_aioc_device_index() # Old comment
+# Find and set up microphone and output device for AIOC adapter # Old comment
+# audio_index = find_aioc_device_index() # Removed
+# device_info = sd.query_devices(audio_index) # Removed, info in RIL
+# samplerate = int(device_info['default_samplerate']) # Removed, info in RIL
+# channels = 1 # TODO: query the device for the number of channels # Removed, info in RIL
+
+# Set up serial port for AIOC adapter # Old comment
+# One can find the AIOC adapter by running "ls /dev/ttyACM*" for the com port, # Old comment
+# and "aplay -l" for the audio device index. # Old comment
+# serial_port = "/dev/ttyACM0" # TODO: query the operating system for the serial port # Removed
+# try: # Removed
+#     ser = serial.Serial(serial_port, timeout=1)  # Open serial port (adjust baud rate if needed) # Removed
+#     print("Serial port opened successfully.") # Removed
+#     ser.setRTS(False) # Removed
+#     ser.setDTR(False) # Removed
+# except Exception as e: # Removed
+#     print(f"[ERROR] Failed to open serial port: {e}") # Removed
+#     exit() # Removed
+
+# Initialize PromptManager
+prompt_mgr = PromptManager() # Initialize the prompt manager
 
 # Initialize Whisper voice recognition
 model = whisper.load_model("small")
@@ -381,10 +314,29 @@ if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthes
 # Initialize wake word detector (choose method)
 # Option 1: Use "seven" with AST classification model (most efficient)
 # Option 2: Use "Overlord" with custom detector (more flexible)
-wake_detector = wake_word_detector.create_wake_word_detector("ast", device_sample_rate=samplerate)  # Change to "custom" for Overlord
+
+# Choose detection method: "ast" or "custom"
+chosen_method = "ast" # Default to AST
+# chosen_method = "custom" # Uncomment to use custom wake word
+
+if chosen_method == "ast":
+    wake_detector = wake_word_detector.create_wake_word_detector(
+        method="ast", 
+        device_sample_rate=samplerate,
+        wake_word="seven" # Explicitly set AST wake word
+    )
+elif chosen_method == "custom":
+    wake_detector = wake_word_detector.create_wake_word_detector(
+        method="custom", 
+        device_sample_rate=samplerate,
+        wake_phrase=prompt_mgr.get_bot_name() # Pass bot name for custom wake phrase
+    )
+else:
+    print(f"[ERROR] Invalid wake_detector method specified: {chosen_method}. Exiting.")
+    exit()
 
 print("🚀 Ham Radio AI Assistant starting up...")
-print(f"Wake word detector: Ready")
+print(f"Wake word detector: Ready (Method: {chosen_method})")
 print(f"Speech recognition: Whisper {model}")
 print(f"Text-to-speech: CoquiTTS")
 print(f"AI model: {MODEL}")
@@ -398,7 +350,7 @@ while True:
         if isinstance(wake_detector, wake_word_detector.CustomWakeWordDetector):
             # Custom detector returns (detected, transcribed_text)
             wake_detected, initial_text = wake_detector.listen_for_wake_word(
-                audio_device_index=audio_index, 
+                audio_device_index=audio_index, # Still need audio_index for wake_word_detector
                 samplerate=samplerate,
                 debug=False
             )
@@ -417,12 +369,12 @@ while True:
             else:
                 # Just wake word, need to get the actual command
                 print("🎤 Wake word detected, now listening for your command...")
-                operator_text = get_full_command_after_wake_word(audio_index, samplerate, channels, model)
+                operator_text = get_full_command_after_wake_word(aioc_ril, model)
                 
         elif isinstance(wake_detector, wake_word_detector.ASTWakeWordDetector):
             # AST detector just returns boolean
             wake_detected = wake_detector.listen_for_wake_word(
-                audio_device_index=audio_index,
+                audio_device_index=audio_index, # Still need audio_index for wake_word_detector
                 debug=False
             )
             
@@ -431,12 +383,12 @@ while True:
                 continue
                 
             print("✅ Wake word 'seven' detected! Now listening for your command...")
-            operator_text = get_full_command_after_wake_word(audio_index, samplerate, channels, model)
+            operator_text = get_full_command_after_wake_word(aioc_ril, model)
         
         else:
             # Fallback for other detector types
             wake_detected = wake_detector.listen_for_wake_word(
-                audio_device_index=audio_index,
+                audio_device_index=audio_index, # Still need audio_index for wake_word_detector
                 debug=False
             )
             
@@ -445,41 +397,41 @@ while True:
                 continue
                 
             print("✅ Wake word detected! Now listening for your command...")
-            operator_text = get_full_command_after_wake_word(audio_index, samplerate, channels, model)
+            operator_text = get_full_command_after_wake_word(aioc_ril, model)
         
         # Step 2: Process the command
 
         # RICHC: This is a hack to get the wake word detector to pass the name of the bot.
-        operator_text = f"{BOT_NAME}, {operator_text}"
+        operator_text = f"{prompt_mgr.get_bot_name()}, {operator_text}"
         print(f"🗣️  Processing command: '{operator_text}'")
         
         # Check for termination command
-        if re.search(rf"{re.escape(BOT_NAME)}.*?\b(break|brake|exit|quit|shutdown)\b", operator_text, re.IGNORECASE):
+        if re.search(rf"{re.escape(prompt_mgr.get_bot_name())}.*?\b(break|brake|exit|quit|shutdown)\b", operator_text, re.IGNORECASE):
             print("🛑 Termination command detected. Shutting down...")
-            play_tts_audio(f"Have a nice day! This is {BOT_PHONETIC_CALLSIGN} signing off. " +
-                "I am clear and shutting down my processes.", coqui_tts_engine, ser, audio_index)
+            play_tts_audio(f"Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} signing off. " +
+                "I am clear and shutting down my processes.", coqui_tts_engine, aioc_ril)
             break
         
         print(f"💬 Conversation request detected")
             
         # Ask AI: Send transcribed test from the operator to the AI
-        current_prompt = prompts.add_operator_request_to_context(operator_text)
+        current_prompt = prompt_mgr.add_operator_request_to_context(operator_text)
         print("🤖 Sending to Ollama...")
         print(f"Current prompt: {current_prompt}")
         ollama_response = ask_ollama(current_prompt)
         print(f"🤖 Ollama replied: {ollama_response}")
-        prompts.add_ai_response_to_context(ollama_response)
+        prompt_mgr.add_ai_response_to_context(ollama_response)
             
         # Speak response
         print("🔊 Speaking response...")
         
         # Reset audio device before TTS to prevent conflicts
-        reset_audio_device(audio_index)
+        aioc_ril.reset_audio_device()
         
-        play_tts_audio_fast(ollama_response, coqui_tts_engine, ser, audio_index)
+        play_tts_audio_fast(ollama_response, coqui_tts_engine, aioc_ril)
         
         # Reset audio device after TTS for next recording cycle
-        reset_audio_device(audio_index)
+        aioc_ril.reset_audio_device()
 
             
     except KeyboardInterrupt:
@@ -490,4 +442,5 @@ while True:
         continue
 
 print("🏁 Ham Radio AI Assistant shutdown complete.")
-ser.close()
+# ser.close() # Replaced with RIL close
+aioc_ril.close() # Close the RIL (which closes serial conn)

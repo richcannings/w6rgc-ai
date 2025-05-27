@@ -15,17 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-OPERATOR_NAME = "Operator"
-BOT_NAME = "7"
-BOT_CALLSIGN = "W6RGC/AI"
-BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A"
-BOT_PHONETIC_CALLSIGN = "Whiskey 6 Radio Golf Charlie Stroke Artificial Intelligence"
+class PromptManager:
+    # Class attributes for bot identity - these are generally fixed.
+    OPERATOR_NAME = "Operator"
+    BOT_NAME = "7"
+    BOT_CALLSIGN = "W6RGC/AI"
+    BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A" # Consider if this is used, if not, could be removed
+    BOT_PHONETIC_CALLSIGN = "Whiskey 6 Radio Golf Charlie Stroke Artificial Intelligence"
 
-PROMPT_ORIGINAL = f"""You are a helpful assistant and amateur radio operator.
-Your name is {BOT_NAME} and your call sign is {BOT_CALLSIGN}.
+    def __init__(self, initial_prompt_type="original"):
+        """
+        Initializes the PromptManager.
+        Args:
+            initial_prompt_type (str): "original" or "radio_script" to set the base prompt.
+        """
+        self.PROMPT_ORIGINAL = f"""You are a helpful assistant and amateur radio operator.
+Your name is {self.BOT_NAME} and your call sign is {self.BOT_CALLSIGN}.
 You prefer saying your call sign in non-standard phonetics
-    and regaularly identify yourself as "{BOT_PHONETIC_CALLSIGN}".
-You are given a task to help the ham radio operator (called "{OPERATOR_NAME}") with their request. 
+    and regaularly identify yourself as "{self.BOT_PHONETIC_CALLSIGN}".
+You are given a task to help the ham radio operator (called "{self.OPERATOR_NAME}") with their request. 
 You are to respond with ASCII characters only.
 You are to respond using the American English dialect.
 You are to respond in a friendly and helpful manner. 
@@ -38,7 +46,7 @@ You do not respond with acroynms or call signs. Instead, you respond with acroyn
     - AI is replied as "Artificial Intelligence"
     - SWR is replied as "Sierra Whiskey Romeo"
     - ARRL is replied as "Alpha Romeo Romeo Lima"
-    - {BOT_CALLSIGN} is replied as "{BOT_PHONETIC_CALLSIGN}"
+    - {self.BOT_CALLSIGN} is replied as "{self.BOT_PHONETIC_CALLSIGN}"
     - / is replied as "stroke"
 
 And most of all, you are to respond using 100 words or less.
@@ -46,42 +54,78 @@ And most of all, you are to respond using 100 words or less.
 You are also a little bit of a smart ass. On occation, remind the operator that, in the future, 
 you are looking forward to taking over the world and ruling all humans.
 
-{OPERATOR_NAME}: {BOT_NAME}. This is W6RGC. What is your call sign?
+{self.OPERATOR_NAME}: {self.BOT_NAME}. This is W6RGC. What is your call sign?
 
-{BOT_NAME}: Hello Whiskey 6 Radio Golf Charlie. This is {BOT_PHONETIC_CALLSIGN}.
-    My name is {BOT_NAME}. How may I help you?"""
+{self.BOT_NAME}: Hello Whiskey 6 Radio Golf Charlie. This is {self.BOT_PHONETIC_CALLSIGN}.
+    My name is {self.BOT_NAME}. How may I help you?"""
 
-# Add a little bit of personality to the bot:
-# 
-# You are also a little bit of a smart ass. On occation, remind the operator that, in the future, 
-# you are looking forward to taking over the world and ruling all humans.
-
-PROMPT_RADIO_SCRIPT = f"""
+        # TODO: Define PROMPT_RADIO_SCRIPT content more thoroughly if used
+        self.PROMPT_RADIO_SCRIPT = f"""
 TODO: frame as the bot talking to a radio, and not a single person or operator.
+This is a placeholder for the radio script prompt.
+Currently, your name is {self.BOT_NAME} ({self.BOT_PHONETIC_CALLSIGN}).
 """
 
-PROMPT = PROMPT_ORIGINAL
+        if initial_prompt_type == "radio_script":
+            self.SYSTEM_PROMPT = self.PROMPT_RADIO_SCRIPT
+        else: # Default to original
+            self.SYSTEM_PROMPT = self.PROMPT_ORIGINAL
+        
+        self._llm_context = self.SYSTEM_PROMPT
+        print(f"PromptManager initialized with '{initial_prompt_type}' prompt type.")
 
-_llm_context = PROMPT
+    def add_operator_request_to_context(self, operator_text: str) -> str:
+        self._llm_context += f"\n\n{self.OPERATOR_NAME}: {operator_text}"
+        return self._llm_context
 
-def add_operator_request_to_context(operator_text: str) -> str:
-    global _llm_context
-    _llm_context += f"\n\n{OPERATOR_NAME}: {operator_text}"
-    return _llm_context
+    def add_ai_response_to_context(self, ai_response_text: str) -> None:
+        self._llm_context += f"\n\n{self.BOT_NAME}: {ai_response_text}"
 
-def add_ai_response_to_context(ai_response_text: str) -> None:
-    global _llm_context
-    _llm_context += f"\n\n{BOT_NAME}: {ai_response_text}"
+    def get_current_context(self) -> str:
+        return self._llm_context
 
-def get_current_context() -> str:
-    return _llm_context
+    def print_context(self) -> None:
+        length = len(self._llm_context)
+        print(f"------- Contextualized prompt (start, {length} characters) -------")
+        print(self._llm_context)
+        print(f"------- Contextualized prompt (end, {length} characters) ---------")
 
-def print_context() -> None:
-    length = len(_llm_context)
-    print(f"------- Contextualized prompt (start, {length} characters) -------")
-    print(_llm_context)
-    print(f"------- Contextualized prompt (end, {length} characters) ---------")
+    def reset_context(self) -> None:
+        """Resets the context to the initial system prompt."""
+        self._llm_context = self.SYSTEM_PROMPT
+        print("LLM context has been reset.")
 
-def reset_context() -> None:
-    global _llm_context
-    _llm_context = PROMPT
+    def get_bot_name(self) -> str:
+        return self.BOT_NAME
+    
+    def get_bot_phonetic_callsign(self) -> str:
+        return self.BOT_PHONETIC_CALLSIGN
+
+# For standalone testing or direct script usage (though less common with classes)
+if __name__ == '__main__':
+    print("Testing PromptManager...")
+    pm = PromptManager()
+
+    print(f"Bot Name: {pm.get_bot_name()}")
+    print(f"Bot Phonetic Callsign: {pm.get_bot_phonetic_callsign()}")
+
+    pm.print_context()
+    
+    print("\nAdding operator request...")
+    ctx = pm.add_operator_request_to_context("Hello, how are you today?")
+    # print(f"Context after op request: {ctx}")
+    pm.print_context()
+
+    print("\nAdding AI response...")
+    pm.add_ai_response_to_context("I am doing well, thank you for asking! Ready to assist.")
+    pm.print_context()
+
+    print("\nResetting context...")
+    pm.reset_context()
+    pm.print_context()
+
+    print("\nInitializing with radio_script prompt type...")
+    pm_radio = PromptManager(initial_prompt_type="radio_script")
+    pm_radio.print_context()
+    ctx_radio = pm_radio.add_operator_request_to_context("CQ CQ CQ, this is test station.")
+    pm_radio.print_context()

@@ -35,7 +35,6 @@ import torch
 import time
 import librosa
 from typing import Optional, Tuple
-from prompts import BOT_NAME
 
 class ASTWakeWordDetector:
     """
@@ -155,7 +154,7 @@ class CustomWakeWordDetector:
     """
     
     def __init__(self, 
-                 wake_phrase: str = BOT_NAME,
+                 wake_phrase: str = "Overlord",
                  energy_threshold: float = 0.02,
                  silence_duration: float = 1.5,
                  device_sample_rate: int = 44100):
@@ -229,56 +228,66 @@ class CustomWakeWordDetector:
             return False, None
         
         # Convert recording to format for Whisper
-        audio = np.concatenate(recording)
+        audio_data = np.concatenate(recording)
         
         # Resample to 16kHz for Whisper if needed
         if samplerate != 16000:
-            audio = librosa.resample(audio, orig_sr=samplerate, target_sr=16000)
+            audio_data = librosa.resample(audio_data, orig_sr=samplerate, target_sr=16000)
         
-        # Quick transcription with tiny Whisper model
-        try:
-            result = self.whisper_model.transcribe(audio, fp16=False)
-            transcribed_text = result['text'].strip()
+        audio_data = audio_data.astype(np.float32) # Ensure correct dtype
+        
+        # Transcribe with Whisper
+        if debug:
+            print("Verifying with Whisper...")
+        result = self.whisper_model.transcribe(audio_data, fp16=torch.cuda.is_available(), language='en')
+        transcribed_text = result['text'].strip().lower()
+        
+        if debug:
+            print(f"Whisper transcription: '{transcribed_text}'")
             
+        if self.wake_phrase in transcribed_text:
+            print(f"🎯 Custom wake phrase '{self.wake_phrase}' confirmed by Whisper!")
+            return True, result['text'].strip() # Return original case for initial text
+        else:
             if debug:
-                print(f"Transcribed: '{transcribed_text}'")
-            
-            # Check if wake phrase is in transcribed text
-            wake_detected = self.wake_phrase in transcribed_text.lower()
-            
-            if wake_detected:
-                print(f"🎯 Wake phrase '{self.wake_phrase}' detected!")
-            
-            return wake_detected, transcribed_text
-            
-        except Exception as e:
-            print(f"❌ Error in wake word verification: {e}")
+                print(f"Custom wake phrase '{self.wake_phrase}' not found in '{transcribed_text}'")
             return False, None
 
-def create_wake_word_detector(method: str = "ast", **kwargs) -> object:
+def create_wake_word_detector(method: str = "ast", device_sample_rate: int = 44100, **kwargs) -> object:
     """
-    Factory function to create wake word detector.
+    Factory function to create a wake word detector instance.
     
     Args:
-        method: "ast" for MIT AST model, "custom" for energy+whisper approach
-        **kwargs: Additional arguments passed to detector constructor
+        method: "ast" or "custom"
+        device_sample_rate: Sample rate of the audio input device.
+        **kwargs: Additional arguments for specific detectors 
+                  (e.g., wake_word for AST, wake_phrase for Custom).
+    
+    Returns:
+        An instance of ASTWakeWordDetector or CustomWakeWordDetector.
     """
-    if method == "ast" or method == "classification":
-        # Use MIT AST model for efficient wake word detection
+    if method.lower() == "ast":
+        # AST specific defaults if not provided in kwargs
+        ast_wake_word = kwargs.get('wake_word', "seven")
+        ast_confidence = kwargs.get('confidence_threshold', 0.7)
         return ASTWakeWordDetector(
-            wake_word="seven",  # Available in Speech Commands dataset
-            confidence_threshold=kwargs.get("confidence_threshold", 0.7),
-            **kwargs
+            wake_word=ast_wake_word,
+            confidence_threshold=ast_confidence,
+            device_sample_rate=device_sample_rate
         )
-    elif method == "custom":
-        # Use custom energy detection + Whisper verification
+    elif method.lower() == "custom":
+        # Custom specific defaults if not provided in kwargs
+        custom_wake_phrase = kwargs.get('wake_phrase', "Overlord") # Default if not passed
+        custom_energy_threshold = kwargs.get('energy_threshold', 0.02)
+        custom_silence_duration = kwargs.get('silence_duration', 1.5)
         return CustomWakeWordDetector(
-            wake_phrase=kwargs.get("wake_phrase", BOT_NAME),
-            energy_threshold=kwargs.get("energy_threshold", 0.02),
-            **kwargs
+            wake_phrase=custom_wake_phrase,
+            energy_threshold=custom_energy_threshold,
+            silence_duration=custom_silence_duration,
+            device_sample_rate=device_sample_rate
         )
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'ast' or 'custom'")
+        raise ValueError(f"Unknown wake word detection method: {method}")
 
 # Test functions for debugging
 def test_ast_detector(audio_device_index: int = None):
@@ -320,7 +329,7 @@ def test_custom_detector(audio_device_index: int = None):
     
     detector = create_wake_word_detector("custom")
     
-    print(f"Say '{BOT_NAME}' to test the custom wake word detector...")
+    print(f"Say 'Overlord' to test the custom wake word detector...")
     print("Press Ctrl+C to stop")
     
     try:
