@@ -64,6 +64,8 @@ You do not respond with acroynms or call signs. Instead, you respond with acroyn
 
 {knowledge_base.NET_CONTROL_STATION_PROMPT}
 
+{knowledge_base.ICS_213_PROMPT}
+
 Available voice commands:
     - "{self.BOT_NAME}, status" or "{self.BOT_NAME}, report": Reports the current AI model and callsign.
     - "{self.BOT_NAME}, reset" or "{self.BOT_NAME}, start new chat": Clears the conversation history and starts fresh.
