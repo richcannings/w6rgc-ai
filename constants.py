@@ -23,7 +23,7 @@ used throughout the application for easier maintenance and configuration.
 
 # Bot Identity
 OPERATOR_NAME = "Operator"
-BOT_NAME = "7"
+BOT_NAME = "marvin" # Here are the following wake word / bot name options: seven (7), marvin , shiela, zero (0), happy, forward.
 BOT_CALLSIGN = "W6RGC/AI"
 BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A"
 BOT_PHONETIC_CALLSIGN = "Whiskey 6 Radio Golf Charlie Stroke Artificial Intelligence"
@@ -60,7 +60,7 @@ DEFAULT_AUDIO_CHANNELS = 1  # Mono audio
 # ============================================================================
 
 # AST Wake Word Detection
-DEFAULT_WAKE_WORD = "seven"
+DEFAULT_WAKE_WORD = BOT_NAME # syncing bot name with wake word
 AST_CONFIDENCE_THRESHOLD = 0.7
 AST_CHUNK_LENGTH_S = 1.0
 AST_MODEL_NAME = "MIT/ast-finetuned-speech-commands-v2"
