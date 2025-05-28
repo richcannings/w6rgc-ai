@@ -110,6 +110,7 @@ from constants import (
     
     # Wake word detection
     WAKE_WORD_METHOD_AST,
+    AST_MODEL_NAME,
     DEFAULT_WAKE_WORD
 )
 
@@ -384,9 +385,9 @@ periodic_identifier = PeriodicIdentifier(
     play_tts_function=play_tts_audio  # Use the file-based method for reliability
 )
 
-print("🚀 Ham Radio AI Assistant starting up...")
+print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
-print(f"Speech recognition: Whisper {model}")
+print(f"Speech recognition: Whisper version:{model._version}")
 print(f"AI model: {DEFAULT_MODEL}")
 print(f"Text-to-speech: {coqui_tts_engine.model_name}")
 print("=" * 50)
@@ -431,7 +432,11 @@ while True:
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
-            status_report = f"I am {prompt_mgr.get_bot_name()}. I am currently using the {DEFAULT_MODEL} large language model for intelligence and operating offline."
+            status_report = f"""I am {prompt_mgr.get_bot_name()}. All systems are go. I use:
+                the {DEFAULT_MODEL} large language model for intelligence, 
+                the {AST_MODEL_NAME} for wake word detection, 
+                the Whisper version {model._version} for speech recognition, and 
+                the {coqui_tts_engine.model_name} for text-to-speech."""
             play_tts_audio(status_report, coqui_tts_engine, ril)
             continue
         elif command_type == "reset":

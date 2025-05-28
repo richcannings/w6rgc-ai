@@ -25,6 +25,7 @@ from constants import (
     PROMPT_TYPE_RADIO_SCRIPT,
     DEFAULT_PROMPT_TYPE
 )
+import knowledge_base
 
 class PromptManager:
     # Class attributes for bot identity - now imported from constants
@@ -54,11 +55,14 @@ You are to respond in way the a TTS engine will be able to understand.
 You do not respond with acroynms or call signs. Instead, you respond with acroynms and call signs using phonetics
     like the ITU phonetic alphabet or be playful with non-standard phonetics. Here are some examples:
     - W6RGC is replied as "Whiskey 6 Radio Golf Charlie"
+    - K6DIT is replied as "Kilo 6 Delta India Tango"
     - AI is replied as "Artificial Intelligence"
     - SWR is replied as "Sierra Whiskey Romeo"
     - ARRL is replied as "Alpha Romeo Romeo Lima"
     - {self.BOT_CALLSIGN} is replied as "{self.BOT_PHONETIC_CALLSIGN}"
     - / is replied as "stroke"
+
+{knowledge_base.NET_CONTROL_STATION_PROMPT}
 
 Available voice commands:
     - "{self.BOT_NAME}, status" or "{self.BOT_NAME}, report": Reports the current AI model and callsign.
