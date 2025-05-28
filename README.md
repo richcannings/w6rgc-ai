@@ -10,20 +10,20 @@ W6RGC/AI is a voice assistant for ham radio operators that runs entirely on your
 
 It's a Python-powered helper that uses a sequence of four AI models to understand you and talk back:
 
-1.  A smart wake word spotter (it listens for "marvin" by default, but you can choose from over 35 options!)
+1.  A smart wake word spotter (it listens for "seven" by default, but you can choose from over 35 options!)
 2.  Speech-to-text using Whisper (so it understands what you say)
 3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b). Plug in your own specialized models and prompts!
 4.  Coqui text-to-speech to give it a voice
 
 The app communicates with ham radios with either an [AIOC adapter](https://github.com/skuep/AIOC) or [Digirig](https://digirig.net/).
 
-Just say the wake word (like "marvin") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
+Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
 
 You can also use voice commands like:
-- **"Status" or "Report"**: Say "marvin, status" or "marvin, report" to find out which AI model is active and the assistant's callsign.
-- **"Reset" or "New Chat"**: Say "marvin, reset" or "marvin, start a new chat" to wipe the conversation slate clean.
-- **"Identify"**: Say "marvin, identify" or other phrases like "identify", "call sign", "what is your call sign", or "who are you" to hear the assistant's phonetic callsign.
-- **"Terminate"**: Say "marvin, break" or "marvin, exit" to shut down the assistant.
+- **"Status" or "Report"**: Say "seven, status" or "seven, report" to find out which AI model is active and the assistant's callsign.
+- **"Reset" or "New Chat"**: Say "seven, reset" or "seven, start a new chat" to wipe the conversation slate clean.
+- **"Identify"**: Say "seven, identify" or other phrases like "identify", "call sign", "what is your call sign", or "who are you" to hear the assistant's phonetic callsign.
+- **"Terminate"**: Say "seven, break" or "seven, exit" to shut down the assistant.
 
 ## Purpose
 
@@ -72,7 +72,7 @@ The system is organized into several key modules:
 The system uses MIT's AST (Audio Spectrogram Transformer) model for efficient wake word detection:
 
 - **35+ Available Wake Words:** backward, bed, bird, cat, dog, down, eight, five, follow, forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
-- **Current Default:** "marvin" (optimized for ham radio use)
+- **Current Default:** "seven" (optimized for ham radio use)
 - **High Performance:** Very fast, low CPU usage, high accuracy
 - **CUDA Support:** GPU acceleration when available
 
@@ -157,9 +157,9 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
 
 3.  **Operation:**
     *   The application will start listening for the wake word
-    *   Say "marvin" (or your configured wake word) followed by your command
-    *   Example: "marvin, what is the current UTC time?"
-    *   To terminate: "marvin, break" or "marvin, exit" or use Ctrl+C
+    *   Say "seven" (or your configured wake word) followed by your command
+    *   Example: "seven, what is the current UTC time?"
+    *   To terminate: "seven, break" or "seven, exit" or use Ctrl+C
 
 ## Configuration
 
