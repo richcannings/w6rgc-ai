@@ -60,3 +60,6 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local 
+
+# Keys
+gemini_api_key.txt
