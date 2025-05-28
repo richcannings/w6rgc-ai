@@ -1,4 +1,4 @@
-# W6RGC/AI: Off Grid Ham Radio AI Voice Assistant
+# W6RGC/AI: Off grid ham radio AI voice assistant
 
 ## Overview
 
@@ -27,7 +27,7 @@ You can also use voice commands like:
 
 ## Purpose
 
-This project is all about mixing the classic hobby of amateur radio with the new world of AI. The main idea is to see how AI can make ham radio even better, whether that's for critical communications during an emergency or just for fun, everyday radio chats.
+This project is all about mixing the ever-relevant hobby of amateur radio with the new world of AI. The main idea is to see how AI can make ham radio even better, whether that's for critical communications during an emergency, or just for fun, everyday radio chats.
 
 Think of it this way:
 *   **When the internet's down (Offline):** This is your AI backup. Imagine an LLM trained with all sorts of useful info for ham radio operators – ARES manuals, FEMA documents, local emergency plans, and so on. It could be an extra "voice" helping you figure things out. Plus, things like voice translation could be added pretty easily.
@@ -35,7 +35,7 @@ Think of it this way:
 
 One exciting idea for the future (and my next project!) is "Voice APRS." Imagine being able to:
 * Send and receive APRS messages using just your voice.
-* Beacon your location by saying something like, "This is W6RGC. Tell everyone I'm at the corner of West Cliff Drive and Swift Street in Santa Cruz."
+* Beacon your location by saying something like, "This is W6RGC. I'm at the corner of West Cliff Drive and Swift Street in Santa Cruz. Beacon my position on APRS."
 
 ## Features
 

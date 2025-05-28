@@ -370,8 +370,6 @@ if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthes
     except:
         print("⚠️  Could not apply TTS speed optimizations")
 
-### MAIN LOOP ###
-
 # Initialize wake word detector using AST method
 wake_detector = wake_word_detector.create_wake_word_detector(
     method=WAKE_WORD_METHOD_AST, 
@@ -392,6 +390,8 @@ print(f"Speech recognition: Whisper {model}")
 print(f"AI model: {DEFAULT_MODEL}")
 print(f"Text-to-speech: {coqui_tts_engine.model_name}")
 print("=" * 50)
+
+### MAIN LOOP ###
 
 # Start periodic identification
 periodic_identifier.start()
