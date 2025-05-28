@@ -1,6 +1,6 @@
 # prompts.py - Manages AI persona, prompts, and conversation context.
 #
-# Author: Rich Cannings, W6RGC, rcannings@gmail.com
+# Author: Rich Cannings <rcannings@gmail.com>
 # Copyright 2025 Rich Cannings
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

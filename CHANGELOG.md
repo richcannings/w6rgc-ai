@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the W6RGC-AI Ham Radio Voice Assistant project will be documented in this file.
+All notable changes to the W6RGC-AI off grid ham radio AI voice assistant project will be documented in this file.
 
 ## [2.2.0] - 2025-05-27
 

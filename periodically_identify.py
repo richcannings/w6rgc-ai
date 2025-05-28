@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# identify_periodically.py - Periodic identification announcements for W6RGC-AI
+# identify_periodically.py - Periodic identification announcements for W6RGC/AI
 #
 # This module handles automatic periodic identification transmissions every 10 minutes
 # to inform other operators about the AI assistant and how to interact with it.
 #
-# Author: Rich Cannings, W6RGC, rcannings@gmail.com
+# Author: Rich Cannings <rcannings@gmail.com>
 # Copyright 2025 Rich Cannings
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

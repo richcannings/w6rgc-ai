@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# main.py - Ham Radio AI Voice Assistant
+# main.py - Off Grid Ham Radio AI Voice Assistant
 #
 # This is the main entry point for the W6RGC/AI Ham Radio Voice Assistant.
 # It integrates wake word detection, speech recognition, AI conversation,
@@ -26,7 +26,7 @@
 #  3. The AI will respond via TTS and transmit over radio
 #  4. Say "seven, break" or "seven, exit" to shutdown
 #
-# Author: Rich Cannings, W6RGC
+# Author: Rich Cannings <rcannings@gmail.com>
 # Copyright 2025 Rich Cannings
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
