@@ -10,3 +10,4 @@ pyserial
 transformers
 torch
 librosa
+google-generativeai

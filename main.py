@@ -54,7 +54,7 @@
 #
 # Current Configuration:
 #  - AST wake word: "seven" (from 35+ available options)
-#  - Bot name: "7" (configurable in prompts.py)
+#  - Bot name: "7" (configurable in context_manager.py)
 #  - Audio device: Auto-detected AIOC adapter
 #  - Serial port: Auto-detected or manually set to /dev/ttyACM0 or /dev/ttyACM1
 
@@ -71,13 +71,14 @@ from TTS.api import TTS as CoquiTTS
 import re
 import wake_word_detector
 
-import prompts
-from prompts import PromptManager
+from context_manager import ContextManager
+from constants import BOT_NAME, BOT_PHONETIC_CALLSIGN # Added direct import
 import commands # Import the new commands module
 
 from ril_aioc import RadioInterfaceLayerAIOC # New import
 from ril_digirig import RadioInterfaceLayerDigiRig # New import for Digirig
 from periodically_identify import PeriodicIdentifier # New import for periodic ID
+from llm_ollama_offline import ask_ollama # Import LLM function
 
 ### CONSTANTS ###
 
@@ -144,37 +145,7 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=Non
     else:
         raise ValueError(f"Unsupported RIL type: {ril_type}. Supported types: {RIL_TYPE_AIOC}, {RIL_TYPE_DIGIRIG}")
 
-def convert_ollama_response(response_text):
-    """
-    Converts the JSON response from Ollama to a string.
-    """
-    try:
-        # Try to parse the response as JSON
-        response_list = json.loads(response_text)
-        if isinstance(response_list, list):
-            # Join all sentences with a space
-            return ' '.join(response_list)
-        return response_text
-    except json.JSONDecodeError:
-        # If not valid JSON, return the original text
-        return response_text
 
-def ask_ollama(prompt):
-    """
-    Asks Ollama for a response to the given prompt.
-    """
-    payload = {
-        "model": DEFAULT_MODEL,
-        "prompt": prompt
-    }
-    response = requests.post(OLLAMA_URL, json=payload, stream=True)
-    response.raise_for_status()
-    result = ""
-    for line in response.iter_lines():
-        if line:
-            data = json.loads(line.decode('utf-8'))
-            result += data.get("response", "")
-    return result
 
 def play_tts_audio_fast(text_to_speak, tts_engine, aioc_interface):
     """
@@ -338,8 +309,8 @@ except Exception as e:
     print(f"[CRITICAL ERROR] An unexpected error occurred during RIL initialization: {e}")
     exit()
 
-# Initialize PromptManager
-prompt_mgr = PromptManager() # Initialize the prompt manager
+# Initialize ContextManager
+prompt_mgr = ContextManager() # Initialize the context manager
 
 # Initialize Whisper voice recognition
 model = whisper.load_model("small")
@@ -418,21 +389,21 @@ while True:
         # Step 2: Process the command
 
         # RICHC: This is a hack to get the wake word detector to pass the name of the bot. 
-        operator_text = f"{prompt_mgr.get_bot_name()}, {operator_text}"
+        operator_text = f"{BOT_NAME}, {operator_text}"
         # Assumes the wake word is the same as the bots name.
         print(f"🗣️  Processing command: '{operator_text}'")
         
         # Identify the command using the commands module
-        command_type = commands.handle_command(operator_text, prompt_mgr)
+        command_type = commands.handle_command(operator_text)
 
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")
-            play_tts_audio(f"Terminating. Have a nice day! This is {prompt_mgr.get_bot_phonetic_callsign()} shutting down my " +
+            play_tts_audio(f"Terminating. Have a nice day! This is {BOT_PHONETIC_CALLSIGN} shutting down my " +
                            "processes. I am clear. Seven three.", coqui_tts_engine, ril)
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
-            status_report = f"""I am {prompt_mgr.get_bot_name()}. All systems are go. I use:
+            status_report = f"""I am {BOT_NAME}. All systems are go. I use:
                 the {DEFAULT_MODEL} large language model for intelligence, 
                 the {AST_MODEL_NAME} for wake word detection, 
                 the Whisper version {model._version} for speech recognition, and 
@@ -447,7 +418,7 @@ while True:
             continue
         elif command_type == "identify":
             print("🆔 Identify command identified by main.py.")
-            identify_response = f"This is {prompt_mgr.get_bot_phonetic_callsign()}."
+            identify_response = f"This is {BOT_PHONETIC_CALLSIGN}."
             play_tts_audio(identify_response, coqui_tts_engine, ril)
             periodic_identifier.restart_timer
             continue

@@ -114,7 +114,6 @@ TTS_OUTPUT_FILE = 'ollama_tts.wav'
 
 # Prompt Types
 PROMPT_TYPE_ORIGINAL = "original"
-PROMPT_TYPE_RADIO_SCRIPT = "radio_script"
 DEFAULT_PROMPT_TYPE = PROMPT_TYPE_ORIGINAL
 
 # ============================================================================
