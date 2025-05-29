@@ -40,7 +40,7 @@ def handle_command(operator_text):
         return "terminate"
 
     # Check for status command
-    if re.search(rf"{re.escape(BOT_NAME)}.*?\b(status|report)\b", text_to_check, re.IGNORECASE):
+    if re.search(rf"{re.escape(BOT_NAME)}.*?\b(status)\b", text_to_check, re.IGNORECASE):
         print("⚙️ Status command detected by commands.py.")
         return "status"
 

@@ -310,7 +310,7 @@ except Exception as e:
     exit()
 
 # Initialize ContextManager
-prompt_mgr = ContextManager() # Initialize the context manager
+context_mgr = ContextManager() # Initialize the context manager
 
 # Initialize Whisper voice recognition
 model = whisper.load_model("small")
@@ -412,7 +412,7 @@ while True:
             continue
         elif command_type == "reset":
             print("🔄 Reset command identified by main.py. Resetting context.")
-            prompt_mgr.reset_context()
+            context_mgr.reset_context()
             play_tts_audio("My context has been reset. I am ready for a new conversation.", 
                            coqui_tts_engine, ril)
             continue
@@ -427,12 +427,12 @@ while True:
             print(f"💬 Conversation request detected")
             
             # Ask AI: Send transcribed test from the operator to the AI
-            current_prompt = prompt_mgr.add_operator_request_to_context(operator_text)
+            current_prompt = context_mgr.add_operator_request_to_context(operator_text)
             print("🤖 Sending to Ollama...")
             print(f"Current prompt: {current_prompt}")
             ollama_response = ask_ollama(current_prompt)
             print(f"🤖 Ollama replied: {ollama_response}")
-            prompt_mgr.add_ai_response_to_context(ollama_response)
+            context_mgr.add_ai_response_to_context(ollama_response)
             
             # Speak response
             print("🔊 Speaking response...")

@@ -18,9 +18,6 @@
 from constants import (
     OPERATOR_NAME,
     BOT_NAME,
-    BOT_CALLSIGN,
-    BOT_SPOKEN_CALLSIGN,
-    BOT_PHONETIC_CALLSIGN
 )
 from prompt import PROMPT
 
@@ -37,14 +34,10 @@ class ContextManager:
                 only the current user message). The ContextManager still maintains
                 the full history internally. Defaults to False.
         """
-        self.PROMPT_ORIGINAL = initial_prompt
-        self.SYSTEM_PROMPT = self.PROMPT_ORIGINAL  # Base system prompt
-        self._llm_context = self.SYSTEM_PROMPT    # Full internal conversation history
+        self._llm_context = initial_prompt
         self.model_tracks_context = model_tracks_context
-        self._is_first_turn = True  # Flag for the first operator turn after init or reset
-
-        tracking_status = "model tracks context" if self.model_tracks_context else "manager tracks context"
-        print(f"ContextManager initialized ({tracking_status}).")
+        self._is_first_run = True  # Flag for the first operator turn after init or reset
+        print(f"ContextManager initialized.")
 
     def add_operator_request_to_context(self, operator_text: str) -> str:
         """
@@ -58,24 +51,23 @@ class ContextManager:
             str: The prompt to be sent to the LLM. This varies based on
                  `model_tracks_context`.
         """
-        current_turn_text = f"\n\n{OPERATOR_NAME}: {operator_text}"
-        self._llm_context += current_turn_text # Always update the full internal context
-
         if self.model_tracks_context:
-            if self._is_first_turn:
-                self._is_first_turn = False
-                return self.SYSTEM_PROMPT + current_turn_text
+            # Only give the initial prompt once (and the operator text)
+            if self._is_first_run:
+                self._llm_context += f"\n\n{OPERATOR_NAME}'s first request is: {operator_text}"
+                self._is_first_run = False
             else:
-                return f"{OPERATOR_NAME}: {operator_text}"
+                self._llm_context = operator_text
         else:
-            return self._llm_context
+            self._llm_context += f"\n\n{OPERATOR_NAME}: {operator_text}"
+        return self._llm_context
 
     def add_ai_response_to_context(self, ai_response_text: str) -> None:
         """Adds the AI's response to the internal conversation history."""
-        self._llm_context += f"\n\n{BOT_NAME}: {ai_response_text}"
+        if not self.model_tracks_context:
+            self._llm_context += f"\n\n{BOT_NAME}: {ai_response_text}"
 
     def get_current_context(self) -> str:
-        """Returns the full internal conversation history."""
         return self._llm_context
 
     def print_context(self) -> None:
@@ -98,7 +90,6 @@ if __name__ == '__main__':
 
     # Directly use constants for bot identity checks here, as methods are removed
     print(f"Bot Name (from constants): {BOT_NAME}")
-    print(f"Bot Phonetic Callsign (from constants): {BOT_PHONETIC_CALLSIGN}")
 
     print("\nInitial full context (should be SYSTEM_PROMPT):")
     cm_false.print_context()
