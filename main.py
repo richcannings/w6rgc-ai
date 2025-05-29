@@ -71,11 +71,9 @@ from TTS.api import TTS as CoquiTTS
 import re
 import wake_word_detector
 
-from context_manager import ContextManager
-from constants import BOT_NAME, BOT_PHONETIC_CALLSIGN # Added direct import
 import commands # Import the new commands module
-
-from ril_aioc import RadioInterfaceLayerAIOC # New import
+from context_manager import ContextManager
+from ril_aioc import RadioInterfaceLayerAIOC
 from ril_digirig import RadioInterfaceLayerDigiRig # New import for Digirig
 from periodically_identify import PeriodicIdentifier # New import for periodic ID
 from llm_ollama_offline import ask_ollama # Import LLM function
@@ -83,6 +81,10 @@ from llm_ollama_offline import ask_ollama # Import LLM function
 ### CONSTANTS ###
 
 from constants import (
+    # Bot name and phonetic call sign
+    BOT_NAME,
+    BOT_PHONETIC_CALLSIGN,
+
     # Audio processing constants
     AUDIO_THRESHOLD,
     SILENCE_DURATION,

@@ -94,6 +94,10 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
 
 ### Prerequisites
 
+*   **Hardware** This project runs local LLMs and requires dedicated GPUs with at least 12g of ram on the 
+    GPU board. Minimally, a [Nvidia GeoForce RTX 3060]
+    (https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/) 
+    is required to run these models. The 3060ti may not be sufficient.
 *   **Operating System:** This project has primarily been tested on Linux
 *   **Python:** Python 3.8 or higher
 *   **CUDA (Optional):** For GPU acceleration of wake word detection and TTS
