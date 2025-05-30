@@ -150,7 +150,7 @@ class ASTWakeWordDetector:
                         
         except KeyboardInterrupt:
             print("\n⏹️  Wake word detection stopped by user")
-            return False
+            raise  # Re-raise the KeyboardInterrupt so the program exits
         except Exception as e:
             print(f"❌ Error in wake word detection: {e}")
             return False

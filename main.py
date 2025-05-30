@@ -391,7 +391,7 @@ while True:
         # Step 2: Process the command
 
         # RICHC: This is a hack to get the wake word detector to pass the name of the bot. 
-        operator_text = f"{BOT_NAME}, {operator_text}"
+        # operator_text = f"{BOT_NAME}, {operator_text}"
         # Assumes the wake word is the same as the bots name.
         print(f"🗣️  Processing command: '{operator_text}'")
         
@@ -403,27 +403,27 @@ while True:
             play_tts_audio(f"Terminating. Have a nice day! This is {BOT_PHONETIC_CALLSIGN} shutting down my " +
                            "processes. I am clear. Seven three.", coqui_tts_engine, ril)
             break
-        elif command_type == "status":
-            print("⚙️ Status command identified by main.py.")
-            status_report = f"""I am {BOT_NAME}. All systems are go. I use:
-                the {DEFAULT_MODEL} large language model for intelligence, 
-                the {AST_MODEL_NAME} for wake word detection, 
-                the Whisper version {model._version} for speech recognition, and 
-                the {coqui_tts_engine.model_name} for text-to-speech."""
-            play_tts_audio(status_report, coqui_tts_engine, ril)
-            continue
+        #elif command_type == "status":
+        #    print("⚙️ Status command identified by main.py.")
+        #    status_report = f"""I am {BOT_NAME}. All systems are go. I use:
+        #        the {DEFAULT_MODEL} large language model for intelligence, 
+        #        the {AST_MODEL_NAME} for wake word detection, 
+        #        the Whisper version {model._version} for speech recognition, and 
+        #        the {coqui_tts_engine.model_name} for text-to-speech."""
+        #    play_tts_audio(status_report, coqui_tts_engine, ril)
+        #    continue
         elif command_type == "reset":
             print("🔄 Reset command identified by main.py. Resetting context.")
             context_mgr.reset_context()
             play_tts_audio("My context has been reset. I am ready for a new conversation.", 
                            coqui_tts_engine, ril)
             continue
-        elif command_type == "identify":
-            print("🆔 Identify command identified by main.py.")
-            identify_response = f"This is {BOT_PHONETIC_CALLSIGN}."
-            play_tts_audio(identify_response, coqui_tts_engine, ril)
-            periodic_identifier.restart_timer
-            continue
+        #elif command_type == "identify":
+        #    print("🆔 Identify command identified by main.py.")
+        #    identify_response = f"This is {BOT_PHONETIC_CALLSIGN}."
+        #    play_tts_audio(identify_response, coqui_tts_engine, ril)
+        #    periodic_identifier.restart_timer
+        #    continue
         else:
             # If no command was handled, proceed with conversation
             print(f"💬 Conversation request detected")

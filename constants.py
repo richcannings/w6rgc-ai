@@ -109,14 +109,6 @@ TTS_INFERENCE_SIGMA = 1.0
 TTS_OUTPUT_FILE = 'ollama_tts.wav'
 
 # ============================================================================
-# PROMPT CONFIGURATION
-# ============================================================================
-
-# Prompt Types
-PROMPT_TYPE_ORIGINAL = "original"
-DEFAULT_PROMPT_TYPE = PROMPT_TYPE_ORIGINAL
-
-# ============================================================================
 # TESTING/DEBUG CONSTANTS
 # ============================================================================
 
@@ -149,3 +141,8 @@ TEMP_AUDIO_DIR = "/tmp"  # Could be made configurable
 
 # Audio Processing
 AUDIO_FRAME_MS = 100  # milliseconds per audio frame for processing 
+
+# ============================================================================
+# DIY Natural Language Understanding
+# ============================================================================
+NLU_MAGIC_WORD = "Brouhaha"
