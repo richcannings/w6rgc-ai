@@ -37,8 +37,12 @@ One exciting idea for the future (and my next project!) is "Voice APRS." Imagine
 * Send and receive APRS messages using just your voice.
 * Beacon your location by saying something like, "This is W6RGC. I'm at the corner of West Cliff Drive and Swift Street in Santa Cruz. Beacon my position on APRS."
 
+**New: VoiceAPRS Functionality!**
+The latest version now includes VoiceAPRS, allowing operators to send and receive APRS messages using natural language voice commands. This feature leverages internet connectivity to interact with APRS services (via findu.com), providing a seamless voice-controlled APRS experience. You can ask the assistant to read your messages or send a message to another callsign, all through voice.
+
 ## Features
 
+*   **VoiceAPRS**: Send and receive APRS messages using natural language voice commands, leveraging NLP and internet connectivity.
 *   **Efficient Wake Word Detection:** Uses MIT's AST (Audio Spectrogram Transformer) model for fast, accurate detection
 *   **Conversational AI:** Leverages Ollama with models like Gemma3 to understand and respond to user speech
 *   **High-Quality Speech Recognition:** Utilizes OpenAI Whisper for accurate transcription of spoken audio

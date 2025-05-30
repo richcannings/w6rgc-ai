@@ -1,4 +1,37 @@
-# helper_aprs.py - scrape findu.com for APRS message sending and receiving
+#!/usr/bin/env python3
+# helper_aprs.py - APRS Message Utility
+#
+# This module provides functions for sending and receiving APRS messages
+# by scraping the findu.com website. It is used by the W6RGC/AI Ham
+# Radio Voice Assistant to enable APRS communication via voice commands.
+#
+# Key Features:
+#  - Send APRS messages via findu.com
+#  - Retrieve APRS messages from findu.com
+#  - Parse HTML to extract message content
+#  - Format messages for natural language presentation
+#
+# Usage:
+#  from helper_aprs import send_aprs_message, get_aprs_messages
+#  send_aprs_message("SENDER_CALL", "RECEIVER_CALL", "Hello from AI assistant!")
+#  messages = get_aprs_messages("YOUR_CALLSIGN")
+#  print(messages)
+#
+# Author: Rich Cannings <rcannings@gmail.com>
+# Copyright 2025 Rich Cannings
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 import requests
 from bs4 import BeautifulSoup
@@ -24,7 +57,7 @@ def get_aprs_messages(receiver):
     url = VIEW_MESSAGE_URL.format(receiver=receiver)
     response = requests.get(url)
     messages = _parse_aprs_messages(response.text)
-    return natural_language_messages(messages)
+    return _natural_language_messages(messages)
 
 def _parse_aprs_messages(html_content):
     """
@@ -76,15 +109,15 @@ def _parse_aprs_messages(html_content):
             
     return messages_list
 
-def natural_language_messages(messages):
+def _natural_language_messages(messages):
     natural_language_response = "Your last 5 A P R S messages are:\n"
     for i, msg in enumerate(messages, 1):
-         natural_language_response += f"({i}) From: {space_out_str(msg['From'])}, To: {space_out_str(msg['To'])}, Message: {msg['Message']}\n"
+         natural_language_response += f"({i}) From: {_space_out_str(msg['From'])}, To: {_space_out_str(msg['To'])}, Message: {msg['Message']}\n"
     natural_language_response += "End messages"
     return natural_language_response
 
 
-def space_out_str(input_string):
+def _space_out_str(input_string):
   """
   Adds a space between each character of the input string.
 

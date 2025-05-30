@@ -1,21 +1,26 @@
-# W6RGC-AI: Off Grid Ham Radio AI Voice Assistant
+#!/usr/bin/env python3
+# constants.py - Configuration Constants
 #
-# Author: Rich Cannings <rcannings@gmail.com>
-# License: Apache License, Version 2.0
-# https://www.apache.org/licenses/LICENSE-2.0
-#
-# Description:
 # This file centralizes all configuration values, thresholds, and constants
 # used throughout the W6RGC-AI voice assistant application. It helps in
 # managing settings for audio processing, wake word detection, hardware,
 # AI/LLM integration, TTS, and other modules from a single location.
 #
-"""
-Constants for the W6RGC AI Ham Radio Assistant
-
-This file centralizes all configuration values, thresholds, and constants
-used throughout the application for easier maintenance and configuration.
-"""
+# Author: Rich Cannings <rcannings@gmail.com>
+# Copyright 2025 Rich Cannings
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 # ============================================================================
 # RADIO/HAM RADIO CONFIGURATION

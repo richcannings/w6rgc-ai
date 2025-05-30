@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # context_manager.py - Manages AI persona, prompts, and conversation context.
 #
 # Author: Rich Cannings <rcannings@gmail.com>
