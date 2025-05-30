@@ -172,7 +172,7 @@ The application uses a centralized configuration system through `constants.py`. 
 ### AI/LLM Configuration
 ```python
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "gemma3:12b"    # Ollama model to use
+DEFAULT_OFFLINE_MODEL = "gemma3:12b"    # Ollama model to use
 ```
 
 ### Wake Word Detection

@@ -95,7 +95,8 @@ from constants import (
     # AI/LLM configuration
     HAS_INTERNET,
     OLLAMA_URL,
-    DEFAULT_MODEL,
+    DEFAULT_OFFLINE_MODEL,
+    DEFAULT_ONLINE_MODEL,
     
     # TTS configuration
     TTS_MODEL_FAST_PITCH,
@@ -364,9 +365,9 @@ print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper version:{model._version}")
 if HAS_INTERNET:
-    print(f"AI model: Gemini (online)")
+    print(f"AI model: {DEFAULT_ONLINE_MODEL} (online)")
 else:
-    print(f"AI model: {DEFAULT_MODEL} (Ollama offline)")
+    print(f"AI model: {DEFAULT_OFFLINE_MODEL} (offline)")
 print(f"Text-to-speech: {coqui_tts_engine.model_name}")
 print("=" * 50)
 
@@ -408,15 +409,22 @@ while True:
             play_tts_audio(f"Terminating. Have a nice day! This is {BOT_PHONETIC_CALLSIGN} shutting down my " +
                            "processes. I am clear. Seven three.", coqui_tts_engine, ril)
             break
-        #elif command_type == "status":
-        #    print("⚙️ Status command identified by main.py.")
-        #    status_report = f"""I am {BOT_NAME}. All systems are go. I use:
-        #        the {DEFAULT_MODEL} large language model for intelligence, 
-        #        the {AST_MODEL_NAME} for wake word detection, 
-        #        the Whisper version {model._version} for speech recognition, and 
-        #        the {coqui_tts_engine.model_name} for text-to-speech."""
-        #    play_tts_audio(status_report, coqui_tts_engine, ril)
-        #    continue
+        elif command_type == "status":
+            print("⚙️ Status command identified by main.py.")
+            if HAS_INTERNET:
+                llm_info = f"{DEFAULT_ONLINE_MODEL} online large language model"
+                internet_info = "I am connected to the internet."
+            else:
+                llm_info = f"the {DEFAULT_OFFLINE_MODEL} offline large language model"
+                internet_info = "I am not connected to the internet."
+
+            status_report = f"""I am {BOT_NAME}. All systems are go. {internet_info} I use:
+                {llm_info} for intelligence, 
+                the {AST_MODEL_NAME} for wake word detection, 
+                the Whisper version {model._version} for speech recognition, and 
+                the {coqui_tts_engine.model_name} for text-to-speech."""
+            play_tts_audio(status_report, coqui_tts_engine, ril)
+            continue
         elif command_type == "reset":
             print("🔄 Reset command identified by main.py. Resetting context.")
             context_mgr.reset_context()

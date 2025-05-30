@@ -84,7 +84,7 @@ DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB2"
 SERIAL_TIMEOUT = 1  # seconds
 
 # ============================================================================
-# AI/LLM CONFIGURATION
+# INTELLIGENCE ENGINE (LLM) CONFIGURATION
 # ============================================================================
 
 # Internet Connectivity and LLM Selection
@@ -92,7 +92,15 @@ HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offlin
 
 # Ollama Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
+DEFAULT_OFFLINE_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
+
+# Gemini Configuration
+GEMINI_API_KEY_FILE = "gemini_api_key.txt"
+DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash-preview-05-20" # "gemini-1.5-flash" 
+MAX_RETRIES = 3
+RETRY_DELAY = 1.0  # seconds
+REQUEST_TIMEOUT = 30  # seconds
+
 
 # ============================================================================
 # TTS (Text-to-Speech) CONFIGURATION

@@ -10,7 +10,7 @@
 
 import json
 import requests
-from constants import DEFAULT_MODEL, OLLAMA_URL
+from constants import DEFAULT_OFFLINE_MODEL, OLLAMA_URL
 
 def convert_ollama_response(response_text):
     """
@@ -32,7 +32,7 @@ def ask_ollama(prompt):
     Asks Ollama for a response to the given prompt.
     """
     payload = {
-        "model": DEFAULT_MODEL,
+        "model": DEFAULT_OFFLINE_MODEL,
         "prompt": prompt
     }
     response = requests.post(OLLAMA_URL, json=payload, stream=True)

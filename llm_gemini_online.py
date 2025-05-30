@@ -41,12 +41,13 @@ import google.generativeai as genai
 from typing import Optional, Dict, Any
 import time
 
-# Configuration constants
-GEMINI_API_KEY_FILE = "gemini_api_key.txt"
-DEFAULT_MODEL = "gemini-1.5-flash"
-MAX_RETRIES = 3
-RETRY_DELAY = 1.0  # seconds
-REQUEST_TIMEOUT = 30  # seconds
+from constants import (
+    GEMINI_API_KEY_FILE,
+    DEFAULT_ONLINE_MODEL,
+    MAX_RETRIES,
+    RETRY_DELAY,
+    REQUEST_TIMEOUT
+)
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -93,7 +94,7 @@ def initialize_gemini() -> genai.GenerativeModel:
         genai.configure(api_key=api_key)
         
         # Create and return the model instance
-        model = genai.GenerativeModel(DEFAULT_MODEL)
+        model = genai.GenerativeModel(DEFAULT_ONLINE_MODEL)
         return model
     except Exception as e:
         if isinstance(e, GeminiAPIError):
@@ -107,7 +108,7 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
     
     Args:
         prompt (str): The text prompt to send to Gemini
-        model_name (str, optional): Gemini model to use (defaults to DEFAULT_MODEL)
+        model_name (str, optional): Gemini model to use (defaults to DEFAULT_ONLINE_MODEL)
         generation_config (dict, optional): Additional generation parameters
         
     Returns:
@@ -130,7 +131,7 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
     
     # Initialize model (use custom model name if provided)
     try:
-        if model_name and model_name != DEFAULT_MODEL:
+        if model_name and model_name != DEFAULT_ONLINE_MODEL:
             api_key = load_api_key()
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel(model_name)
@@ -183,7 +184,7 @@ def ask_gemini_streaming(prompt: str, model_name: Optional[str] = None,
     
     Args:
         prompt (str): The text prompt to send to Gemini
-        model_name (str, optional): Gemini model to use (defaults to DEFAULT_MODEL)
+        model_name (str, optional): Gemini model to use (defaults to DEFAULT_ONLINE_MODEL)
         generation_config (dict, optional): Additional generation parameters
         
     Yields:
@@ -206,7 +207,7 @@ def ask_gemini_streaming(prompt: str, model_name: Optional[str] = None,
     
     # Initialize model
     try:
-        if model_name and model_name != DEFAULT_MODEL:
+        if model_name and model_name != DEFAULT_ONLINE_MODEL:
             api_key = load_api_key()
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel(model_name)
@@ -279,7 +280,7 @@ if __name__ == "__main__":
             print("✅ Available models:")
             for model in available_models:
                 print(f"   - {model}")
-            print(f"\n🎯 Using model: {DEFAULT_MODEL}")
+            print(f"\n🎯 Using model: {DEFAULT_ONLINE_MODEL}")
         else:
             print("⚠️  Could not retrieve model list")
         
