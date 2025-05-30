@@ -19,7 +19,8 @@ from constants import (
     OPERATOR_NAME,
     BOT_NAME,
 )
-from prompt import PROMPT
+#from prompt import PROMPT
+from prompt_gemini_generated import PROMPT
 
 class ContextManager:
     def __init__(self, initial_prompt=PROMPT, model_tracks_context=False):
