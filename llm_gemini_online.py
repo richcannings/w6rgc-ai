@@ -38,6 +38,7 @@
 
 import os
 import google.generativeai as genai
+from google.generativeai.types import FunctionDeclaration, Tool
 from typing import Optional, Dict, Any
 import time
 
@@ -46,8 +47,10 @@ from constants import (
     DEFAULT_ONLINE_MODEL,
     MAX_RETRIES,
     RETRY_DELAY,
-    REQUEST_TIMEOUT
+    REQUEST_TIMEOUT,
+    BOT_CALLSIGN
 )
+from helper_aprs import get_aprs_messages
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -101,10 +104,34 @@ def initialize_gemini() -> genai.GenerativeModel:
             raise
         raise GeminiAPIError(f"Failed to initialize Gemini API: {e}")
 
+# Define the APRS tool at the module level
+get_operator_aprs_messages_func = FunctionDeclaration(
+    name="get_operator_aprs_messages",
+    description=(
+        "Retrieves the latest received APRS messages for a specific operator's callsign. "
+        "Use this when the operator asks to read their messages, check APRS mail, or similar requests. "
+        "IMPORTANT: If the operator's callsign is not known from the current conversation or previous turns, "
+        "you MUST ask the operator for their callsign first. Then, once they provide it, call this function again "
+        "with their callsign. Do not call this function without the 'operator_callsign' parameter."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "operator_callsign": {
+                "type": "string",
+                "description": "The operator's amateur radio callsign (e.g., N0CALL, W6RGC)."
+            }
+        },
+        "required": ["operator_callsign"]
+    }
+)
+aprs_tool = Tool(function_declarations=[get_operator_aprs_messages_func])
+
 def ask_gemini(prompt: str, model_name: Optional[str] = None, 
                generation_config: Optional[Dict[str, Any]] = None) -> str:
     """
     Send a prompt to Google Gemini and return the response.
+    Handles function calls for tools like reading APRS messages.
     
     Args:
         prompt (str): The text prompt to send to Gemini
@@ -115,7 +142,7 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
         str: Gemini's response text
         
     Raises:
-        GeminiAPIError: If the API request fails after all retries
+        GeminiAPIError: If the API request fails after all retries or if function execution fails critically.
     """
     if not prompt or not prompt.strip():
         raise GeminiAPIError("Prompt cannot be empty")
@@ -130,14 +157,17 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
         }
     
     # Initialize model (use custom model name if provided)
+    current_model = None
     try:
         if model_name and model_name != DEFAULT_ONLINE_MODEL:
-            api_key = load_api_key()
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(model_name)
+            # Ensure API key is configured for this model instance
+            # genai.configure is global, load_api_key ensures it's called if needed.
+            load_api_key() 
+            current_model = genai.GenerativeModel(model_name)
         else:
-            model = initialize_gemini()
+            current_model = initialize_gemini() # Gets/initializes default model
     except Exception as e:
+        # Wrap model initialization errors
         raise GeminiAPIError(f"Model initialization failed: {e}")
     
     # Attempt the API call with retries
@@ -146,34 +176,92 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
         try:
             print(f"🤖 Sending prompt to Gemini (attempt {attempt + 1}/{MAX_RETRIES})...")
             
-            # Generate response
-            response = model.generate_content(
-                prompt,
-                generation_config=generation_config
+            # Generate response, including the APRS tool
+            response = current_model.generate_content(
+                prompt, # User's initial prompt as a string
+                generation_config=generation_config,
+                tools=[aprs_tool] 
             )
             
-            # Check if response was blocked or empty
-            if not response.text:
-                if hasattr(response, 'prompt_feedback'):
-                    feedback = response.prompt_feedback
-                    if hasattr(feedback, 'block_reason'):
-                        raise GeminiAPIError(f"Response blocked: {feedback.block_reason}")
-                raise GeminiAPIError("Empty response received from Gemini")
+            # Check for function call in the response
+            function_call_to_execute = None
+            # Ensure candidate and content parts exist before accessing
+            if response.candidates and \
+               response.candidates[0].content and \
+               response.candidates[0].content.parts:
+                for part_content in response.candidates[0].content.parts:
+                    if hasattr(part_content, 'function_call') and part_content.function_call:
+                        function_call_to_execute = part_content.function_call
+                        break # Process the first function call found
             
-            print(f"✅ Received response from Gemini ({len(response.text)} characters)")
-            return response.text.strip()
+            if function_call_to_execute:
+                fc = function_call_to_execute
+                if fc.name == "get_operator_aprs_messages":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    operator_callsign = fc.args.get("operator_callsign")
+
+                    if not operator_callsign:
+                        # This should ideally not happen if LLM follows 'required' and description.
+                        # Return a message for TTS to inform the user.
+                        print("❌ Function 'get_operator_aprs_messages' called without 'operator_callsign'.")
+                        return "I need your callsign to fetch APRS messages. Please tell me your callsign."
+
+                    aprs_messages_text = ""
+                    try:
+                        # Execute the actual function with the operator's callsign
+                        print(f"📞 Calling helper_aprs.get_aprs_messages for callsign: {operator_callsign}")
+                        aprs_messages_text = get_aprs_messages(receiver=operator_callsign)
+                        print(f"✉️ APRS messages received for {operator_callsign}: {aprs_messages_text[:100]}...") # Log snippet
+                        
+                        if not aprs_messages_text or aprs_messages_text.strip() == "No messages found.":
+                             return f"No new APRS messages found for {operator_callsign}."
+                        return f"TTS_DIRECT:Messages: {aprs_messages_text}"
+                        
+                    except Exception as e:
+                        print(f"❌ Error calling get_aprs_messages for {operator_callsign}: {e}")
+                        # Return a user-friendly error message for Gemini to process or for direct TTS
+                        return f"An error occurred while trying to fetch APRS messages for {operator_callsign}: {str(e)}"
+            
+            # If no function call was made, or it wasn't the one we handle, proceed with normal text response
+            if hasattr(response, 'text') and response.text:
+                print(f"✅ Received direct response from Gemini ({len(response.text)} characters)")
+                return response.text.strip()
+            
+            # If no text and no function call we handled, check for blocking or empty response
+            block_reason_msg = ""
+            if hasattr(response, 'prompt_feedback') and \
+               response.prompt_feedback and \
+               hasattr(response.prompt_feedback, 'block_reason') and \
+               response.prompt_feedback.block_reason:
+                block_reason_msg = f"Response blocked: {response.prompt_feedback.block_reason}"
+                raise GeminiAPIError(block_reason_msg) # Will be caught and retried
+            else:
+                # This error will be caught by the outer except and retried or raised
+                raise GeminiAPIError("Empty response received from Gemini (no text, no function call, or unhandled function call)")
             
         except Exception as e:
-            last_error = e
+            last_error = e # Store the exception
             if attempt < MAX_RETRIES - 1:
                 print(f"⚠️  Gemini API attempt {attempt + 1} failed: {e}")
                 print(f"🔄 Retrying in {RETRY_DELAY} seconds...")
                 time.sleep(RETRY_DELAY)
-            else:
-                print(f"❌ All Gemini API attempts failed")
-    
-    # If we get here, all retries failed
-    raise GeminiAPIError(f"Failed to get response from Gemini after {MAX_RETRIES} attempts. Last error: {last_error}")
+            else: # This is the last attempt
+                print("❌ All Gemini API attempts failed.")
+                # Raise the last encountered error, ensuring it's a GeminiAPIError if we wrapped it.
+                if isinstance(last_error, GeminiAPIError):
+                    raise last_error
+                else: # Wrap other exceptions
+                    raise GeminiAPIError(f"Failed to get response from Gemini after {MAX_RETRIES} attempts. Last error: {last_error}")
+
+    # Fallback if loop finishes: should be unreachable if MAX_RETRIES >= 1 due to prior raises.
+    # However, as a safeguard:
+    if last_error: # This means all retries failed.
+        if not isinstance(last_error, GeminiAPIError):
+            last_error = GeminiAPIError(f"ask_gemini ultimately failed after retries. Last error: {last_error}")
+        raise last_error
+    else: # Should be truly impossible given the logic if MAX_RETRIES >=1
+        raise GeminiAPIError("ask_gemini failed to produce a response or error, and no error was captured after retries.")
 
 def ask_gemini_streaming(prompt: str, model_name: Optional[str] = None,
                         generation_config: Optional[Dict[str, Any]] = None):

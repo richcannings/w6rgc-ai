@@ -396,8 +396,10 @@ while True:
         
         # Step 2: Process the command
 
-        # RICHC: This is a hack to get the wake word detector to pass the name of the bot. 
+        # RICHC: This is a hack to get the wake word detector to pass the name of the bot, so the bot
+        # receives the entire transmission.
         # operator_text = f"{BOT_NAME}, {operator_text}"
+        
         # Assumes the wake word is the same as the bots name.
         print(f"🗣️  Processing command: '{operator_text}'")
         
@@ -450,6 +452,19 @@ while True:
                 print(f"Current prompt: {current_prompt}")
                 ai_response = ask_gemini(current_prompt)
                 print(f"🤖 Gemini replied: {ai_response}")
+
+                # Check for direct TTS command from Gemini function call
+                if ai_response.startswith("TTS_DIRECT:"):
+                    tts_message = ai_response.replace("TTS_DIRECT:", "", 1)
+                    print(f"🔊 APRS - Speaking directly: {tts_message[:100]}...")
+                    ril.reset_audio_device()
+                    play_tts_audio_fast(tts_message, coqui_tts_engine, ril)
+                    # Optionally, add to context or decide if this interaction ends here
+                    # For now, we'll just speak it and let the loop continue
+                    # context_mgr.add_ai_response_to_context(f"[Spoke APRS messages: {len(tts_message)} chars]")
+                    periodic_identifier.restart_timer()
+                    continue # Skip further processing of this response in the main loop
+
             else:
                 print("🤖 Sending to Ollama...")
                 print(f"Current prompt: {current_prompt}")

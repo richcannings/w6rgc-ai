@@ -11,3 +11,4 @@ transformers
 torch
 librosa
 google-generativeai
+beautifulsoup4

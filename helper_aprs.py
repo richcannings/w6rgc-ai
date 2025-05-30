@@ -20,6 +20,7 @@ def send_aprs_message(sender, receiver, message):
     return response.text
 
 def get_aprs_messages(receiver):
+    print(f"Getting APRS messages for {receiver}")
     url = VIEW_MESSAGE_URL.format(receiver=receiver)
     response = requests.get(url)
     messages = _parse_aprs_messages(response.text)
@@ -76,8 +77,21 @@ def _parse_aprs_messages(html_content):
     return messages_list
 
 def natural_language_messages(messages):
-    natural_language_response = "Your last 5 APRS messages are:\n"
+    natural_language_response = "Your last 5 A P R S messages are:\n"
     for i, msg in enumerate(messages, 1):
-         natural_language_response += f"({i}) From: {msg['From']}, To: {msg['To']}, Message: {msg['Message']}\n"
+         natural_language_response += f"({i}) From: {space_out_str(msg['From'])}, To: {space_out_str(msg['To'])}, Message: {msg['Message']}\n"
     natural_language_response += "End messages"
     return natural_language_response
+
+
+def space_out_str(input_string):
+  """
+  Adds a space between each character of the input string.
+
+  Args:
+    input_string: The string to be processed.
+
+  Returns:
+    A new string with spaces between each original character.
+  """
+  return " ".join(input_string)
