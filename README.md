@@ -10,7 +10,7 @@ W6RGC/AI is a voice assistant for ham radio operators that runs entirely on your
 
 It's a Python-powered helper that uses a sequence of four AI models to understand you and talk back:
 
-1.  A smart wake word spotter (it listens for "seven" by default, but you can choose from over 35 options!)
+1.  A smart wake word spotter. It listens for "seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal)), but you can choose from over 35 not-so-good options
 2.  Speech-to-text using Whisper (so it understands what you say)
 3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b). Plug in your own specialized models and prompts!
 4.  Coqui text-to-speech to give it a voice
