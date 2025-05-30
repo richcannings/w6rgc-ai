@@ -287,7 +287,7 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                         # findu.com's sendmsg.cgi doesn't give a clear "success" or "fail" in its HTML response easily.
                         # It often just says "Message queued for delivery to..." or similar.
                         # We'll assume success if no exception, and craft a positive TTS message.
-                        return f"TTS_DIRECT:APRS message sent from {sender_callsign} to {recipient_callsign} with message: {message_text}. The system responded: {send_response if send_response else 'OK'}."
+                        return f"TTS_DIRECT:APRS message sent." # from {sender_callsign} to {recipient_callsign} with message: {message_text}. The system responded: {send_response if send_response else 'OK'}."
 
                     except Exception as e:
                         print(f"❌ Error calling send_aprs_message from {sender_callsign} to {recipient_callsign}: {e}")
