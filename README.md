@@ -31,14 +31,12 @@ This project is all about mixing the ever-relevant hobby of amateur radio with t
 
 Think of it this way:
 *   **When the internet's down (Offline):** This is your AI backup. Imagine an LLM trained with all sorts of useful info for ham radio operators – ARES manuals, FEMA documents, local emergency plans, and so on. It could be an extra "voice" helping you figure things out. Plus, things like voice translation could be added pretty easily.
-*   **When you're online:** You can connect to even more powerful LLMs. Most online AIs can browse the internet and do all sorts of cool stuff.
-
-One exciting idea for the future (and my next project!) is "Voice APRS." Imagine being able to:
-* Send and receive APRS messages using just your voice.
-* Beacon your location by saying something like, "This is W6RGC. I'm at the corner of West Cliff Drive and Swift Street in Santa Cruz. Beacon my position on APRS."
+*   **When you're online:** You can connect to even more powerful LLMs. Most online AIs can browse the internet and do all sorts of cool stuff through Natural Language Understanding.
 
 **New: VoiceAPRS Functionality!**
 The latest version now includes VoiceAPRS, allowing operators to send and receive APRS messages using natural language voice commands. This feature leverages internet connectivity to interact with APRS services (via findu.com), providing a seamless voice-controlled APRS experience. You can ask the assistant to read your messages or send a message to another callsign, all through voice.
+
+Next up is voice APRS beaconing. Imagine saying "This is W6RGC. I'm at the corner of West Cliff Drive and Swift Street in Santa Cruz. Beacon my position on APRS." Then the chatbot uses Google Places to identify your GPS coordinates and radius, then beacons. 
 
 ## Features
 
