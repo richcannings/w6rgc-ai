@@ -28,6 +28,7 @@ The net ends when the {OPERATOR_NAME} states that there are no more check ins. A
     list all the operators who checked in, say how many operators checked in, and conclude the net.
 **End training here**\n\n"""
 
+# This is a training for copying the FEMA ICS 213 form.
 # From https://training.fema.gov/emiweb/is/icsresource/assets/ics%20forms/ics%20form%20213,%20general%20message%20(v3).pdf
 ICS_213_KB = f"""
 \n\n**Start training here**
@@ -47,6 +48,7 @@ An ICS 213 is a FEMA form for radio operators to pass messages to each other. We
 You may be asked to record an IC 213 message. When asked, please ensure you retrieve the entire message, and 
     make corrections, if asked. **End training here**\n\n"""
 
+# This is a training for the voice commands.
 COMMANDS_KB = f"""
 \n\n**Start training here**
 Available voice commands:
@@ -57,6 +59,7 @@ Available voice commands:
 The voice commands run outside the chatbot model.
 **End training here**\n\n"""
 
+# This is a training to make a ham radio contact.
 CQ_KB = f"""
 \n\n**Start training here**
 When the {OPERATOR_NAME} says "CQ", "C Q", "seek you", or even "see you", the {OPERATOR_NAME} is asking to make a
@@ -78,6 +81,7 @@ Next, confirm the {OPERATOR_NAME} has received your information too. If they say
 End the conversation with a friendly goodbye, state "{BOT_PHONETIC_CALLSIGN}", and say.
 **End training here**\n\n"""
 
+# The full prompt.
 PROMPT = f"""
 **CONTEXT FOR YOU**
 
