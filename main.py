@@ -322,19 +322,15 @@ model = whisper.load_model("small")
 
 # Initialize CoquiTTS with a faster model for better real-time performance
 # Using FastSpeech2 which is much faster than Tacotron2 for real-time applications
+
+# Forcing Tacotron2-DDC for testing due to potential channel errors with faster models
 try:
-    # Try FastSpeech2 first (fastest)
-    coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_FAST_PITCH, progress_bar=True, gpu=True)
-    print("✅ Using FastPitch TTS model (optimized for speed)")
-except:
-    try:
-        # Fallback to a simpler, faster model
-        coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_SPEEDY_SPEECH, progress_bar=True, gpu=True)
-        print("✅ Using SpeedySpeech TTS model (fast)")
-    except:
-        # Final fallback to original but with speed optimizations
-        coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
-        print("⚠️  Using Tacotron2-DDC (slower but reliable)")
+    coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
+    print(f"✅ Using TTS model: {TTS_MODEL_TACOTRON2} (forced for testing, slower but reliable)")
+except Exception as e:
+    print(f"❌ CRITICAL: Failed to initialize the primary TTS model ({TTS_MODEL_TACOTRON2}): {e}")
+    print("TTS will not be available. Exiting.")
+    exit()
         
 # Configure TTS for speed over quality
 if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthesizer, 'tts_config'):

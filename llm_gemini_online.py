@@ -50,7 +50,7 @@ from constants import (
     REQUEST_TIMEOUT,
     BOT_CALLSIGN
 )
-from helper_aprs import get_aprs_messages
+from helper_aprs import get_aprs_messages, send_aprs_message
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -126,6 +126,44 @@ get_operator_aprs_messages_func = FunctionDeclaration(
     }
 )
 aprs_tool = Tool(function_declarations=[get_operator_aprs_messages_func])
+
+# Define the APRS send message tool
+send_aprs_message_func = FunctionDeclaration(
+    name="send_aprs_message_for_operator",
+    description=(
+        "Sends an APRS message from a specified sender to a recipient. "
+        "Use this when the operator wants to send an APRS message. "
+        "You MUST obtain the sender's callsign (usually the operator's), the recipient's callsign, "
+        "and the message content (max 50 characters) before calling this function. "
+        "If any of these are missing, ask the operator to provide them."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "sender_callsign": {
+                "type": "string",
+                "description": "The callsign of the sender (e.g., W6RGC, N0CALL)."
+            },
+            "recipient_callsign": {
+                "type": "string",
+                "description": "The callsign of the recipient (e.g., N0CALL, W6RGC)."
+            },
+            "message_text": {
+                "type": "string",
+                "description": "The content of the message, 50 characters maximum."
+            }
+        },
+        "required": ["sender_callsign", "recipient_callsign", "message_text"]
+    }
+)
+# Add the new send function to the existing aprs_tool
+# This assumes aprs_tool is already defined with get_operator_aprs_messages_func
+# If aprs_tool might not be defined, it should be initialized here.
+# For simplicity, assuming aprs_tool = Tool(...) was already called.
+#if aprs_tool and hasattr(aprs_tool, 'function_declarations'):
+#    aprs_tool.function_declarations.append(send_aprs_message_func)
+#else: # Initialize if it wasn't (e.g. if a previous definition was removed)
+aprs_tool = Tool(function_declarations=[get_operator_aprs_messages_func, send_aprs_message_func])
 
 def ask_gemini(prompt: str, model_name: Optional[str] = None, 
                generation_config: Optional[Dict[str, Any]] = None) -> str:
@@ -222,6 +260,38 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                         print(f"❌ Error calling get_aprs_messages for {operator_callsign}: {e}")
                         # Return a user-friendly error message for Gemini to process or for direct TTS
                         return f"An error occurred while trying to fetch APRS messages for {operator_callsign}: {str(e)}"
+                
+                elif fc.name == "send_aprs_message_for_operator":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    sender_callsign = fc.args.get("sender_callsign")
+                    recipient_callsign = fc.args.get("recipient_callsign")
+                    message_text = fc.args.get("message_text")
+
+                    if not sender_callsign or not recipient_callsign or not message_text:
+                        missing_params = []
+                        if not sender_callsign: missing_params.append("your callsign (sender)")
+                        if not recipient_callsign: missing_params.append("recipient's callsign")
+                        if not message_text: missing_params.append("message content")
+                        return f"I'm missing some information to send the APRS message: {', '.join(missing_params)}. Please provide all details."
+
+                    if len(message_text) > 50:
+                        return "The APRS message is too long. Please keep it to 50 characters or less."
+
+                    try:
+                        print(f"📤 Calling helper_aprs.send_aprs_message from {sender_callsign} to {recipient_callsign}: {message_text}")
+                        send_response = send_aprs_message(sender=sender_callsign, receiver=recipient_callsign, message=message_text)
+                        print(f"📨 APRS send response: {send_response[:100]}...") # Log snippet
+                        
+                        # We need to provide a meaningful response for TTS.
+                        # findu.com's sendmsg.cgi doesn't give a clear "success" or "fail" in its HTML response easily.
+                        # It often just says "Message queued for delivery to..." or similar.
+                        # We'll assume success if no exception, and craft a positive TTS message.
+                        return f"TTS_DIRECT:APRS message sent from {sender_callsign} to {recipient_callsign} with message: {message_text}. The system responded: {send_response if send_response else 'OK'}."
+
+                    except Exception as e:
+                        print(f"❌ Error calling send_aprs_message from {sender_callsign} to {recipient_callsign}: {e}")
+                        return f"An error occurred while trying to send the APRS message from {sender_callsign} to {recipient_callsign}: {str(e)}"
             
             # If no function call was made, or it wasn't the one we handle, proceed with normal text response
             if hasattr(response, 'text') and response.text:
