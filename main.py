@@ -76,7 +76,8 @@ from context_manager import ContextManager
 from ril_aioc import RadioInterfaceLayerAIOC
 from ril_digirig import RadioInterfaceLayerDigiRig # New import for Digirig
 from periodically_identify import PeriodicIdentifier # New import for periodic ID
-from llm_ollama_offline import ask_ollama # Import LLM function
+from llm_gemini_online import ask_gemini # Import online LLM function
+from llm_ollama_offline import ask_ollama # Import offline LLM function
 
 ### CONSTANTS ###
 
@@ -92,6 +93,7 @@ from constants import (
     WHISPER_TARGET_SAMPLE_RATE,
     
     # AI/LLM configuration
+    HAS_INTERNET,
     OLLAMA_URL,
     DEFAULT_MODEL,
     
@@ -361,7 +363,10 @@ periodic_identifier = PeriodicIdentifier(
 print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper version:{model._version}")
-print(f"AI model: {DEFAULT_MODEL}")
+if HAS_INTERNET:
+    print(f"AI model: Gemini (online)")
+else:
+    print(f"AI model: {DEFAULT_MODEL} (Ollama offline)")
 print(f"Text-to-speech: {coqui_tts_engine.model_name}")
 print("=" * 50)
 
@@ -430,16 +435,25 @@ while True:
             
             # Ask AI: Send transcribed test from the operator to the AI
             current_prompt = context_mgr.add_operator_request_to_context(operator_text)
-            print("🤖 Sending to Ollama...")
-            print(f"Current prompt: {current_prompt}")
-            ollama_response = ask_ollama(current_prompt)
-            print(f"🤖 Ollama replied: {ollama_response}")
-            context_mgr.add_ai_response_to_context(ollama_response)
+            
+            # Choose LLM based on internet availability
+            if HAS_INTERNET:
+                print("🤖 Sending to Gemini...")
+                print(f"Current prompt: {current_prompt}")
+                ai_response = ask_gemini(current_prompt)
+                print(f"🤖 Gemini replied: {ai_response}")
+            else:
+                print("🤖 Sending to Ollama...")
+                print(f"Current prompt: {current_prompt}")
+                ai_response = ask_ollama(current_prompt)
+                print(f"🤖 Ollama replied: {ai_response}")
+                
+            context_mgr.add_ai_response_to_context(ai_response)
             
             # Speak response
             print("🔊 Speaking response...")
             ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
-            play_tts_audio_fast(ollama_response, coqui_tts_engine, ril)
+            play_tts_audio_fast(ai_response, coqui_tts_engine, ril)
             periodic_identifier.restart_timer
 
         # Reset audio device after TTS for next recording cycle

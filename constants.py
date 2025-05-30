@@ -87,6 +87,9 @@ SERIAL_TIMEOUT = 1  # seconds
 # AI/LLM CONFIGURATION
 # ============================================================================
 
+# Internet Connectivity and LLM Selection
+HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
+
 # Ollama Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
