@@ -1,15 +1,15 @@
-# voice_aprs.py - scrape findu.com for APRS message sending and receiving
+# helper_aprs.py - scrape findu.com for APRS message sending and receiving
 
 import requests
 from bs4 import BeautifulSoup
 
 # Send message HTTP GET command using findu.com
-SEND_MESSAGE_URL= "http://www.findu.com/cgi-bin/sendmsg.cgi?fromcall={sender}&tocall={receiver}&msg={message}"
+SEND_MESSAGE_URL = "http://www.findu.com/cgi-bin/sendmsg.cgi?fromcall={sender}&tocall={receiver}&msg={message}"
 
 # View message HTTP GET command using findu.com
-VIEW_MESSAGE_URL= "http://findu.com/cgi-bin/msg.cgi?call={receiver}"
+VIEW_MESSAGE_URL = "http://findu.com/cgi-bin/msg.cgi?call={receiver}"
 
-APRS_MESSAGE_MAX_LENGTH= 50
+APRS_MESSAGE_MAX_LENGTH = 50
 
 def send_aprs_message(sender, receiver, message):
     url = SEND_MESSAGE_URL.format(sender=sender, receiver=receiver, message=message)
@@ -76,7 +76,8 @@ def _parse_aprs_messages(html_content):
     return messages_list
 
 def natural_language_messages(messages):
-    natural_language_response = ""
+    natural_language_response = "Your last 5 APRS messages are:\n"
     for i, msg in enumerate(messages, 1):
          natural_language_response += f"({i}) From: {msg['From']}, To: {msg['To']}, Message: {msg['Message']}\n"
+    natural_language_response += "End messages"
     return natural_language_response
