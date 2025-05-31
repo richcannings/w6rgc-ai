@@ -13,7 +13,7 @@ W6RGC/AI is an experiment in applying AI to ham radio. W6RGC/AI is an AI voice a
 
 The app communicates with ham radios with either an [AIOC adapter](https://github.com/skuep/AIOC) or [Digirig](https://digirig.net/).
 
-Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
+Just say the wake word (like "seven") and then tell it what you need.
 
 ## Purpose
 
@@ -69,18 +69,6 @@ The system uses MIT's AST (Audio Spectrogram Transformer) model for efficient wa
 - **CUDA Support:** GPU acceleration when available
 
 To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of the supported words.
-
-## Technologies Used
-
-*   **Python 3**
-*   **Wake Word Detection:** MIT AST (Audio Spectrogram Transformer)
-*   **Speech-to-Text:** [OpenAI Whisper](https://openai.com/research/whisper)
-*   **Large Language Model Engine:** [Ollama](https://ollama.ai/) (e.g., Gemma3 models)
-*   **Text-to-Speech:** [CoquiTTS](https://github.com/coqui-ai/TTS)
-*   **Audio Processing:** `sounddevice`, `soundfile`, `numpy`, `scipy`, `librosa`
-*   **Machine Learning:** `transformers`, `torch` (with CUDA support)
-*   **Serial Communication:** `pyserial` (for PTT control)
-*   **HTTP Requests:** `requests` (for Ollama API)
 
 ## Setup and Installation
 
