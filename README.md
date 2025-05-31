@@ -1,29 +1,19 @@
-# W6RGC/AI: Off grid ham radio AI voice assistant
+# W6RGC/AI: On and Off grid ham radio AI voice assistant
 
 ## Overview
 
-If "AI is the new electricity", then someday we'll need a backup AI buddy when communication systems go down. 
+W6RGC/AI is an experiment in applying AI to ham radio. W6RGC/AI is an AI voice assistant that supports:
 
-That's where W6RGC/AI comes in.
-
-W6RGC/AI is a voice assistant for ham radio operators that runs entirely on your local computer. No internet? No problem!
-
-It's a Python-powered helper that uses a sequence of four AI models to understand you and talk back:
-
-1.  A smart wake word spotter. It listens for "seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal)), but you can choose from over 35 not-so-good options
-2.  Speech-to-text using Whisper (so it understands what you say)
-3.  A flexible large language model (LLM) for the brains of the operation (currently using Ollama's gemma3:12b). Plug in your own specialized models and prompts!
-4.  Coqui text-to-speech to give it a voice
+1.  Smart wake word spotting. Listens for "seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal)). You can choose from over 35 not-so-good options.
+2.  Speech-to-text using OpenAI Whisper
+3.  Modular LLMs for the brains of the operation. The current default uses online Gemini "gemini-2.5-flash-preview-05-20". Easy to configure offline Ollama model. Plug in your own models and prompts!
+4.  Example prompts for performing QSOs, running nets, and recording FEMA ICS-213
+5.  Example tooling/function calling using Natural Language Understanding. Voice APRS sends and receive APRS messages
+6.  Coqui text-to-speech to give it a voice
 
 The app communicates with ham radios with either an [AIOC adapter](https://github.com/skuep/AIOC) or [Digirig](https://digirig.net/).
 
 Just say the wake word (like "seven") and then tell it what you need. It's designed for easy, hands-free use in your radio shack or mobile
-
-You can also use voice commands like:
-- **"Status" or "Report"**: Say "seven, status" or "seven, report" to find out which AI model is active and the assistant's callsign.
-- **"Reset" or "New Chat"**: Say "seven, reset" or "seven, start a new chat" to wipe the conversation slate clean.
-- **"Identify"**: Say "seven, identify" or other phrases like "identify", "call sign", "what is your call sign", or "who are you" to hear the assistant's phonetic callsign.
-- **"Terminate"**: Say "seven, break" or "seven, exit" to shut down the assistant.
 
 ## Purpose
 
@@ -96,13 +86,10 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
 
 ### Prerequisites
 
-*   **Hardware** This project runs local LLMs and requires dedicated GPUs with at least 12g of ram on the 
-    GPU board. Minimally, a [Nvidia GeoForce RTX 3060]
-    (https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/) 
-    is required to run these models. The 3060ti may not be sufficient.
-*   **Operating System:** This project has primarily been tested on Linux
-*   **Python:** Python 3.8 or higher
-*   **CUDA (Optional):** For GPU acceleration of wake word detection and TTS
+*   **CUDA Hardware** For GPU acceleration. This project runs local LLMs and requires dedicated GPU hardware 
+    Minimally, a [Nvidia GeoForce RTX 3060](https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/) is required to run all these models.
+*   **Audio hardware with PTT**. Digirig and AIOC (All-In-One-Cable) are supported
+*   **Operating System:** This project only been tested on Linux
 *   **Required Linux Packages:** Install the following packages using apt:
     ```bash
     sudo apt update
@@ -111,19 +98,19 @@ To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of 
 *   **User Permissions:** Add your user to the `dialout` group for serial port access:
     ```bash
     sudo usermod -a -G dialout $USER
-    # Log out and back in for changes to take effect
     ```
+    Log out and back in for changes to take effect
 *   **Ollama:** Install Ollama by running the following command in your terminal:
     ```bash
     curl -fsSL https://ollama.com/install.sh | sh
-    ```    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma3:12b`).
-*   **AIOC (All-In-One-Cable) Adapter or Digirig:** This project is designed to work with an AIOC or Digirig adapter for PTT (Push-to-Talk) functionality. The system automatically detects AIOC and Digirig devices by name.
+    ```
+    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma3:12b`).
 
 ### Installation Steps
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/richcannings/w6rgc-ai
     cd w6rgc-ai
     ```
 2.  **Create a Python virtual environment (recommended):**
@@ -218,10 +205,9 @@ PERIODIC_ID_INTERVAL_MINUTES = 10  # minutes between automatic identification
 
 ## Hardware Requirements
 
-*   **Minimum:** CPU with 4+ cores, 8GB RAM
-*   **Recommended:** GPU with CUDA support for faster processing
+*   **Minimum:** CPU with 4+ cores, 32GB RAM, 
+*   **GPU with CUDA support** RTX3060 with 12GB RAM. More GPUs, the better.
 *   **Audio:** AIOC (All-In-One-Cable) adapter, Digirig, or compatible USB audio interface
-*   **Serial:** USB serial port for PTT control (typically /dev/ttyACM0, /dev/ttyACM1, or /dev/ttyUSBx)
 
 ## Testing and Development
 
