@@ -23,12 +23,14 @@ from datetime import datetime
 from constants import (
     OPERATOR_NAME,
     BOT_NAME,
+    WRITE_SCRIPT_TO_FILE,
+    SCRIPT_FILE_PATH
 )
-#from prompt import PROMPT
+
 from prompt_gemini_generated import PROMPT
 
 class ContextManager:
-    def __init__(self, initial_prompt=PROMPT, model_tracks_context=False, log_file_path=None):
+    def __init__(self, initial_prompt=PROMPT, model_tracks_context=False, log_file_path=SCRIPT_FILE_PATH):
         """
         Initializes the ContextManager.
 
@@ -40,18 +42,11 @@ class ContextManager:
                 only the current user message). The ContextManager still maintains
                 the full history internally. Defaults to False.
             log_file_path (str): Path to the log file where context will be written.
-                If None, defaults to "chatbot-script-{time}-{date}.log".
+                If None, defaults to constants.SCRIPT_FILE_PATH.
         """
         self._llm_context = initial_prompt
         self.model_tracks_context = model_tracks_context
         self._is_first_run = True  # Flag for the first operator turn after init or reset
-        
-        # Generate default log file name if not provided
-        if log_file_path is None:
-            now = datetime.now()
-            time_str = now.strftime("%H-%M-%S")
-            date_str = now.strftime("%Y-%m-%d")
-            log_file_path = f"chatbot-script-{time_str}-{date_str}.log"
         
         # Set up logging
         self.log_file_path = log_file_path
@@ -64,30 +59,33 @@ class ContextManager:
 
     def _setup_context_logger(self):
         """Sets up a dedicated logger for context changes."""
-        # Create a logger specifically for context
-        self.context_logger = logging.getLogger('llm_context')
-        self.context_logger.setLevel(logging.INFO)
-        
-        # Remove existing handlers to avoid duplicates
-        for handler in self.context_logger.handlers[:]:
-            self.context_logger.removeHandler(handler)
-        
-        # Create file handler with immediate flushing
-        file_handler = logging.FileHandler(self.log_file_path, mode='a', encoding='utf-8')
-        file_handler.setLevel(logging.INFO)
-        
-        # Create formatter that includes timestamp
-        formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        file_handler.setFormatter(formatter)
-        
-        # Add handler to logger
-        self.context_logger.addHandler(file_handler)
-        
-        # Prevent propagation to root logger
-        self.context_logger.propagate = False
+        if WRITE_SCRIPT_TO_FILE:
+            # Create a logger specifically for context
+            self.context_logger = logging.getLogger('llm_context')
+            self.context_logger.setLevel(logging.INFO)
+            
+            # Remove existing handlers to avoid duplicates
+            for handler in self.context_logger.handlers[:]:
+                self.context_logger.removeHandler(handler)
+            
+            # Create file handler with immediate flushing
+            file_handler = logging.FileHandler(self.log_file_path, mode='a', encoding='utf-8')
+            file_handler.setLevel(logging.INFO)
+            
+            # Create formatter that includes timestamp
+            formatter = logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S'
+            )
+            file_handler.setFormatter(formatter)
+            
+            # Add handler to logger
+            self.context_logger.addHandler(file_handler)
+            
+            # Prevent propagation to root logger
+            self.context_logger.propagate = False
+        else:
+            self.context_logger = None
 
     def _log_context(self, action, description=""):
         """
@@ -97,23 +95,24 @@ class ContextManager:
             action (str): The action that triggered this log (e.g., "OPERATOR_MSG", "AI_RESPONSE")
             description (str): Optional description of the action
         """
-        separator = "=" * 80
-        context_length = len(self._llm_context)
-        
-        log_entry = f"\n{separator}\n"
-        log_entry += f"ACTION: {action}\n"
-        if description:
-            log_entry += f"DESCRIPTION: {description}\n"
-        log_entry += f"CONTEXT_LENGTH: {context_length} characters\n"
-        log_entry += f"{separator}\n"
-        log_entry += self._llm_context
-        log_entry += f"\n{separator}\n"
-        
-        self.context_logger.info(log_entry)
-        
-        # Force flush to ensure immediate writing
-        for handler in self.context_logger.handlers:
-            handler.flush()
+        if WRITE_SCRIPT_TO_FILE and self.context_logger:
+            separator = "=" * 80
+            context_length = len(self._llm_context)
+            
+            log_entry = f"\n{separator}\n"
+            log_entry += f"ACTION: {action}\n"
+            if description:
+                log_entry += f"DESCRIPTION: {description}\n"
+            log_entry += f"CONTEXT_LENGTH: {context_length} characters\n"
+            log_entry += f"{separator}\n"
+            log_entry += self._llm_context
+            log_entry += f"\n{separator}\n"
+            
+            self.context_logger.info(log_entry)
+            
+            # Force flush to ensure immediate writing
+            for handler in self.context_logger.handlers:
+                handler.flush()
 
     def add_operator_request_to_context(self, operator_text: str) -> str:
         """

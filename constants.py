@@ -22,6 +22,8 @@
 # limitations under the License.
 #
 
+from datetime import datetime
+
 # ============================================================================
 # RADIO/HAM RADIO CONFIGURATION
 # ============================================================================
@@ -110,6 +112,15 @@ REQUEST_TIMEOUT = 30  # seconds
 # ============================================================================
 # TTS (Text-to-Speech) CONFIGURATION
 # ============================================================================
+
+# Script File Path
+WRITE_SCRIPT_TO_FILE = True
+
+# Generate timestamped script file path
+_now = datetime.now()
+_time_str = _now.strftime("%H-%M-%S")
+_date_str = _now.strftime("%Y-%m-%d")
+SCRIPT_FILE_PATH = f"chatbot-script-{_date_str}-{_time_str}.log"
 
 # TTS Model Options
 TTS_MODEL_FAST_PITCH = "tts_models/en/ljspeech/fast_pitch"
