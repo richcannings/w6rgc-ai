@@ -61,23 +61,23 @@
 import sounddevice as sd
 import numpy as np
 import soundfile as sf
-import whisper
-from scipy.signal import resample
 import time
 import requests
 import os
 import json
 from TTS.api import TTS as CoquiTTS
 import re
-import wake_word_detector
 
-import commands # Import the new commands module
+# modules custom to the w6rgc/ai project
+import wake_word_detector
+import commands
+from speech_recognition import SpeechRecognitionEngine
 from context_manager import ContextManager
 from ril_aioc import RadioInterfaceLayerAIOC
-from ril_digirig import RadioInterfaceLayerDigiRig # New import for Digirig
-from periodically_identify import PeriodicIdentifier # New import for periodic ID
-from llm_gemini_online import ask_gemini # Import online LLM function
-from llm_ollama_offline import ask_ollama # Import offline LLM function
+from ril_digirig import RadioInterfaceLayerDigiRig
+from periodically_identify import PeriodicIdentifier
+from llm_gemini_online import ask_gemini
+from llm_ollama_offline import ask_ollama
 
 ### CONSTANTS ###
 
@@ -85,12 +85,6 @@ from constants import (
     # Bot name and phonetic call sign
     BOT_NAME,
     BOT_PHONETIC_CALLSIGN,
-
-    # Audio processing constants
-    AUDIO_THRESHOLD,
-    SILENCE_DURATION,
-    FRAME_DURATION,
-    WHISPER_TARGET_SAMPLE_RATE,
     
     # AI/LLM configuration
     HAS_INTERNET,
@@ -231,64 +225,6 @@ def play_tts_audio(text_to_speak, tts_engine, aioc_interface):
         gc.collect()
         print("✅ Audio transmission cycle complete (file-based). PTT OFF.")
 
-def get_full_command_after_wake_word(aioc_interface, model):
-    """
-    Record and transcribe the full command after wake word detection.
-    Uses the existing Whisper model for high-quality transcription.
-    Uses RadioInterfaceLayerAIOC for audio input stream parameters.
-    """
-    print("🎤 Recording your command...")
-    
-    # Reset audio device to ensure clean recording
-    aioc_interface.reset_audio_device()
-    
-    recording = []
-    speech_started = False
-    silence_counter = 0
-    
-    # Get stream parameters from RIL
-    stream_params = aioc_interface.get_input_stream_params()
-    samplerate = stream_params['samplerate'] # Use RIL determined samplerate
-
-    with sd.InputStream(**stream_params) as stream:
-        while True:
-            frame, _ = stream.read(int(FRAME_DURATION * samplerate))
-            frame = np.squeeze(frame)
-            amplitude = np.max(np.abs(frame))
-            
-            if amplitude > AUDIO_THRESHOLD:
-                if not speech_started:
-                    print("🗣️  Speech detected, recording...")
-                    speech_started = True
-                recording.append(frame)
-                silence_counter = 0
-            elif speech_started:
-                recording.append(frame)
-                silence_counter += FRAME_DURATION
-                if silence_counter >= SILENCE_DURATION:
-                    print("🔇 Silence detected, processing...")
-                    break
-    
-    if not recording:
-        print("❌ No speech detected")
-        return ""
-    
-    # Process audio for Whisper
-    audio = np.concatenate(recording)
-    if audio.ndim > 1:
-        audio = audio[:, 0]
-    if samplerate != WHISPER_TARGET_SAMPLE_RATE:
-        num_samples = int(len(audio) * WHISPER_TARGET_SAMPLE_RATE / samplerate)
-        audio = resample(audio, num_samples)
-    
-    # Transcribe with main Whisper model
-    print("📝 Transcribing with Whisper...")
-    result = model.transcribe(audio, fp16=True, language='en')
-    transcribed_text = result['text'].strip()
-    
-    print(f"📝 Transcribed: '{transcribed_text}'")
-    return transcribed_text
-
 ### INITIALIZATION ###
 
 ## Radio Interface Layer setup
@@ -318,12 +254,9 @@ except Exception as e:
 context_mgr = ContextManager() # Initialize the context manager
 
 # Initialize Whisper voice recognition
-model = whisper.load_model("small")
+speech_recognition_engine = SpeechRecognitionEngine(ril)
 
 # Initialize CoquiTTS with a faster model for better real-time performance
-# Using FastSpeech2 which is much faster than Tacotron2 for real-time applications
-
-# Forcing Tacotron2-DDC for testing due to potential channel errors with faster models
 try:
     coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
     print(f"✅ Using TTS model: {TTS_MODEL_TACOTRON2} (forced for testing, slower but reliable)")
@@ -359,7 +292,7 @@ periodic_identifier = PeriodicIdentifier(
 
 print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
-print(f"Speech recognition: Whisper version:{model._version}")
+print(f"Speech recognition: Whisper version:{speech_recognition_engine.version}")
 if HAS_INTERNET:
     print(f"AI model: {DEFAULT_ONLINE_MODEL} (online)")
 else:
@@ -388,7 +321,7 @@ while True:
             continue
             
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
-        operator_text = get_full_command_after_wake_word(ril, model)
+        operator_text = speech_recognition_engine.get_full_command_after_wake_word()
         
         # Step 2: Process the command
 
@@ -419,7 +352,7 @@ while True:
             status_report = f"""I am {BOT_NAME}. All systems are go. {internet_info} I use:
                 {llm_info} for intelligence, 
                 the {AST_MODEL_NAME} for wake word detection, 
-                the Whisper version {model._version} for speech recognition, and 
+                the Whisper version {speech_recognition_engine.version} for speech recognition, and 
                 the {coqui_tts_engine.model_name} for text-to-speech."""
             play_tts_audio(status_report, coqui_tts_engine, ril)
             continue
