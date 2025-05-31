@@ -1,19 +1,42 @@
-# W6RGC/AI: On and Off grid ham radio AI voice assistant
+# W6RGC/AI: On and off grid ham radio AI voice assistant
 
 ## Overview
 
-W6RGC/AI is an experiment in applying AI to ham radio. W6RGC/AI is an AI voice assistant that supports:
+AI is changing everything. Are you ready, Operator?
 
-1.  Smart wake word spotting. Listens for "seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal)). You can choose from over 35 not-so-good options.
-2.  Speech-to-text using OpenAI Whisper
-3.  Modular LLMs for the brains of the operation. The current default uses online Gemini "gemini-2.5-flash-preview-05-20". Easy to configure offline Ollama model. Plug in your own models and prompts!
-4.  Example prompts for performing QSOs, running nets, and recording FEMA ICS-213
-5.  Example tooling/function calling using Natural Language Understanding. Voice APRS sends and receive APRS messages
-6.  Coqui text-to-speech to give it a voice
+As keyboards lose favor to natural language input (your regular voice), I believe ham radio will become even more relevant because ham radios are great at transmitting and receving natural language. And, like the ham radio operator, AI has the potential to be a great pairing of intelligence and communication. That is how W6RGC/AI was born.
 
-The app communicates with ham radios with either an [AIOC adapter](https://github.com/skuep/AIOC) or [Digirig](https://digirig.net/).
+W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant. 
 
-Just say the wake word (like "seven") and then tell it what you need.
+W6RGC/AI explore and leverages the following AI models in concert:
+
+1.  **AI based wake word spotting** 
+    - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2):
+    -   Listens for "Seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal))
+    -   You can choose from over 35 not-so-good options
+2.  **AI based speech-to-text**
+    - Uses [OpenAI Whisper](https://github.com/openai/whisper) speech recognition
+3.  **Modular LLMs for the brains of the operation** 
+    - The current default uses online [Gemini](https://gemini.google.com/) "[gemini-2.5-flash-preview-05-20](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash)" and requires a developer key
+    - A one line change (`HAS_INTERNET`) switches to offline [Ollama](https://ollama.com/) model, like "[gemma3:12b](https://ollama.com/bsahane/gemma3:12b)"
+    - Plug in your own models and prompts!
+4.  **Ham radio prompts**. Example prompts for:
+    - Performing QSOs
+    - Running nets
+    - recording FEMA ICS-213
+5.  **AI based tooling and function calling**
+    - Uses[Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
+    - Optional regular expression based system too 
+    - Example: "Voice APRS" sends and receive APRS messages using Natural Language Understanding.
+6.  **AI based text-to-speech** using [CoquiTTS](https://github.com/coqui-ai/TTS) to give the bot a voice
+
+The app communicates with ham radios with a:
+- [AIOC adapter](https://github.com/skuep/AIOC)
+- [Digirig](https://digirig.net/).
+
+For your tinkering pleasure, code is designed for modularity, making it east to swap and compare AI models, prompts, and function calling.
+
+Your ham radio is the user interface. When on the air, activate W6RGC/AI by saying the wake word (like "Seven") at the start of every transmission, and then tell "Seven" what you need.
 
 ## Purpose
 

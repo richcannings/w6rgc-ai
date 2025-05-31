@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ai_function_aprs.py - AI Functions for APRS
+# aprs_ai_function.py - AI Functions for APRS
 #
 # This module is intended to house AI-specific function definitions and tools
 # related to APRS (Automatic Packet Reporting System) functionality for the
