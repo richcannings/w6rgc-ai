@@ -16,6 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+import os
+from datetime import datetime
+
 from constants import (
     OPERATOR_NAME,
     BOT_NAME,
@@ -24,7 +28,7 @@ from constants import (
 from prompt_gemini_generated import PROMPT
 
 class ContextManager:
-    def __init__(self, initial_prompt=PROMPT, model_tracks_context=False):
+    def __init__(self, initial_prompt=PROMPT, model_tracks_context=False, log_file_path=None):
         """
         Initializes the ContextManager.
 
@@ -35,11 +39,81 @@ class ContextManager:
                 return a minimal prompt (system prompt + first user message, then
                 only the current user message). The ContextManager still maintains
                 the full history internally. Defaults to False.
+            log_file_path (str): Path to the log file where context will be written.
+                If None, defaults to "chatbot-script-{time}-{date}.log".
         """
         self._llm_context = initial_prompt
         self.model_tracks_context = model_tracks_context
         self._is_first_run = True  # Flag for the first operator turn after init or reset
-        print(f"ContextManager initialized.")
+        
+        # Generate default log file name if not provided
+        if log_file_path is None:
+            now = datetime.now()
+            time_str = now.strftime("%H-%M-%S")
+            date_str = now.strftime("%Y-%m-%d")
+            log_file_path = f"chatbot-script-{time_str}-{date_str}.log"
+        
+        # Set up logging
+        self.log_file_path = log_file_path
+        self._setup_context_logger()
+        
+        # Log initial context
+        self._log_context("INIT", "Initial context setup")
+        
+        print(f"ContextManager initialized. Context logging to: {self.log_file_path}")
+
+    def _setup_context_logger(self):
+        """Sets up a dedicated logger for context changes."""
+        # Create a logger specifically for context
+        self.context_logger = logging.getLogger('llm_context')
+        self.context_logger.setLevel(logging.INFO)
+        
+        # Remove existing handlers to avoid duplicates
+        for handler in self.context_logger.handlers[:]:
+            self.context_logger.removeHandler(handler)
+        
+        # Create file handler with immediate flushing
+        file_handler = logging.FileHandler(self.log_file_path, mode='a', encoding='utf-8')
+        file_handler.setLevel(logging.INFO)
+        
+        # Create formatter that includes timestamp
+        formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(formatter)
+        
+        # Add handler to logger
+        self.context_logger.addHandler(file_handler)
+        
+        # Prevent propagation to root logger
+        self.context_logger.propagate = False
+
+    def _log_context(self, action, description=""):
+        """
+        Logs the current context to the file.
+        
+        Args:
+            action (str): The action that triggered this log (e.g., "OPERATOR_MSG", "AI_RESPONSE")
+            description (str): Optional description of the action
+        """
+        separator = "=" * 80
+        context_length = len(self._llm_context)
+        
+        log_entry = f"\n{separator}\n"
+        log_entry += f"ACTION: {action}\n"
+        if description:
+            log_entry += f"DESCRIPTION: {description}\n"
+        log_entry += f"CONTEXT_LENGTH: {context_length} characters\n"
+        log_entry += f"{separator}\n"
+        log_entry += self._llm_context
+        log_entry += f"\n{separator}\n"
+        
+        self.context_logger.info(log_entry)
+        
+        # Force flush to ensure immediate writing
+        for handler in self.context_logger.handlers:
+            handler.flush()
 
     def add_operator_request_to_context(self, operator_text: str) -> str:
         """
@@ -58,16 +132,21 @@ class ContextManager:
             if self._is_first_run:
                 self._llm_context += f"\n\n{OPERATOR_NAME}'s first request is: {operator_text}"
                 self._is_first_run = False
+                self._log_context("OPERATOR_FIRST_MSG", f"First operator message: {operator_text[:100]}...")
             else:
                 self._llm_context = operator_text
+                self._log_context("OPERATOR_MSG", f"Operator message (model tracks context): {operator_text[:100]}...")
         else:
             self._llm_context += f"\n\n{OPERATOR_NAME}: {operator_text}"
+            self._log_context("OPERATOR_MSG", f"Operator message: {operator_text[:100]}...")
+        
         return self._llm_context
 
     def add_ai_response_to_context(self, ai_response_text: str) -> None:
         """Adds the AI's response to the internal conversation history."""
         if not self.model_tracks_context:
             self._llm_context += f"\n\n{BOT_NAME}: {ai_response_text}"
+            self._log_context("AI_RESPONSE", f"AI response: {ai_response_text[:100]}...")
 
     def get_current_context(self) -> str:
         return self._llm_context
@@ -81,8 +160,9 @@ class ContextManager:
 
     def reset_context(self) -> None:
         """Resets the internal context to the initial system prompt."""
-        self._llm_context = self.SYSTEM_PROMPT
-        self._is_first_turn = True  # Reset for model_tracks_context logic
+        self._llm_context = PROMPT
+        self._is_first_run = True  # Reset for model_tracks_context logic
+        self._log_context("RESET", "Context reset to initial prompt")
         print("LLM context has been reset.")
 
 # For standalone testing or direct script usage (though less common with classes)
