@@ -50,7 +50,7 @@ from constants import (
     REQUEST_TIMEOUT,
     BOT_CALLSIGN
 )
-from helper_aprs import get_aprs_messages, send_aprs_message
+from aprs_helper import get_aprs_messages, send_aprs_message
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -248,7 +248,7 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                     aprs_messages_text = ""
                     try:
                         # Execute the actual function with the operator's callsign
-                        print(f"📞 Calling helper_aprs.get_aprs_messages for callsign: {operator_callsign}")
+                        print(f"📞 Calling aprs_helper.get_aprs_messages for callsign: {operator_callsign}")
                         aprs_messages_text = get_aprs_messages(receiver=operator_callsign)
                         print(f"✉️ APRS messages received for {operator_callsign}: {aprs_messages_text[:100]}...") # Log snippet
                         
@@ -279,7 +279,7 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                         return "The APRS message is too long. Please keep it to 50 characters or less."
 
                     try:
-                        print(f"📤 Calling helper_aprs.send_aprs_message from {sender_callsign} to {recipient_callsign}: {message_text}")
+                        print(f"📤 Calling aprs_helper.send_aprs_message from {sender_callsign} to {recipient_callsign}: {message_text}")
                         send_response = send_aprs_message(sender=sender_callsign, receiver=recipient_callsign, message=message_text)
                         print(f"📨 APRS send response: {send_response[:100]}...") # Log snippet
                         

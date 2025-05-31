@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# helper_aprs.py - APRS Message Utility
+# aprs_helper.py - APRS Message Utility
 #
 # This module provides functions for sending and receiving APRS messages
 # by scraping the findu.com website. It is used by the W6RGC/AI Ham
