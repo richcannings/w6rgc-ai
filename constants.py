@@ -31,7 +31,7 @@ OPERATOR_NAME = "Operator"
 BOT_NAME = "seven" # Here are the following wake word / bot name options: seven (7), marvin , shiela, zero (0), happy, forward.
 BOT_CALLSIGN = "W6RGC/AI"
 BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A"
-BOT_PHONETIC_CALLSIGN = "Whiskey 6 Radio Golf Charlie Stroke Artificial Intelligence"
+BOT_PHONETIC_CALLSIGN = "Whiskey 6 Romeo Golf Charlie Stroke Alpha India"
 
 # ============================================================================
 # AUDIO PROCESSING CONSTANTS
