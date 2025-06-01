@@ -2,16 +2,18 @@
 
 ## Overview
 
-AI is changing everything. Are you ready, Operator?
+AI is changing everything. Operator: Are you ready?
 
-As keyboards lose favor to natural language input (your regular voice), I believe ham radio will become even more relevant because ham radios are great at transmitting and receving natural language. And, like the ham radio operator, AI has the potential to be a great pairing of intelligence and communication. That is how W6RGC/AI was born.
+W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant, and runs an assortment of online and fully offline models.
 
-W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant. 
+**Prompt based features include:** performing QSOs, running simple nets, signal reports, and copying [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message forms.
 
-W6RGC/AI explore and leverages the following AI models in concert:
+**Function based features include:** voice-based [APRS](https://www.aprs.org/) message sending/receiving, and basic status/exit commands.
+
+W6RGC/AI explores and leverages the following AI models in concert:
 
 1.  **AI based wake word spotting** 
-    - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2):
+    - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2)
     -   Listens for "Seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal))
     -   You can choose from over 35 not-so-good options
 2.  **AI based speech-to-text**
@@ -23,18 +25,18 @@ W6RGC/AI explore and leverages the following AI models in concert:
 4.  **Ham radio prompts**. Example prompts for:
     - Performing QSOs
     - Running nets
-    - recording FEMA ICS-213
+    - Copying FEMA ICS-213 forms
 5.  **AI based tooling and function calling**
-    - Uses[Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
-    - Optional regular expression based system too 
+    - Uses [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
     - Example: "Voice APRS" sends and receive APRS messages using Natural Language Understanding.
+    - A regular expression based system is available too 
 6.  **AI based text-to-speech** using [CoquiTTS](https://github.com/coqui-ai/TTS) to give the bot a voice
 
-The app communicates with ham radios with a:
+The app interfaces to ham radios with a:
 - [AIOC adapter](https://github.com/skuep/AIOC)
 - [Digirig](https://digirig.net/).
 
-For your tinkering pleasure, code is designed for modularity, making it east to swap and compare AI models, prompts, and function calling.
+The code is designed for modularity, making it east to swap and compare AI models, prompts, and function calling.
 
 Your ham radio is the user interface. When on the air, activate W6RGC/AI by saying the wake word (like "Seven") at the start of every transmission, and then tell "Seven" what you need.
 
@@ -75,7 +77,7 @@ The system is organized into several key modules:
 
 - **`main.py`**: Main application entry point and orchestration
 - **`constants.py`**: Centralized configuration management for all settings
-- **`commands.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
+- **`regex_command_functions.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
 - **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
 - **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware management
 - **`prompts.py`**: AI persona and conversation management (class-based)
@@ -226,7 +228,7 @@ The project includes several testing utilities:
 
 - **Wake word testing**: Built-in debug modes in wake word detector
 - **Module testing**: Each module includes `if __name__ == "__main__"` test sections
-- **Command testing**: Test voice command recognition with `commands.py`
+- **Command testing**: Test voice command recognition with `regex_command_functions.py`
 
 To test individual components:
 ```bash
@@ -234,7 +236,7 @@ python ril_aioc.py                # Test AIOC hardware interface
 python ril_digirig.py             # Test Digirig hardware interface
 python prompts.py                 # Test prompt management
 python wake_word_detector.py      # Test wake word detection
-python commands.py                # Test command identification
+python regex_command_functions.py # Test command identification
 python periodically_identify.py   # Test periodic identification
 ```
 
