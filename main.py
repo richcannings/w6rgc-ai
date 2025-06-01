@@ -70,7 +70,7 @@ import re
 
 # modules custom to the w6rgc/ai project
 import wake_word_detector
-import regex_command_functions
+import regex_command_tooling
 from speech_recognition import SpeechRecognitionEngine
 from context_manager import ContextManager
 from ril_aioc import RadioInterfaceLayerAIOC
@@ -333,7 +333,7 @@ while True:
         print(f"🗣️  Processing command: '{operator_text}'")
         
         # Identify the command using the commands module
-        command_type = regex_command_functions.handle_command(operator_text)
+        command_type = regex_command_tooling.handle_command(operator_text)
 
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")

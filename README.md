@@ -77,7 +77,7 @@ The system is organized into several key modules:
 
 - **`main.py`**: Main application entry point and orchestration
 - **`constants.py`**: Centralized configuration management for all settings
-- **`regex_command_functions.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
+- **`regex_command_tooling.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
 - **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
 - **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware management
 - **`prompts.py`**: AI persona and conversation management (class-based)
@@ -228,7 +228,7 @@ The project includes several testing utilities:
 
 - **Wake word testing**: Built-in debug modes in wake word detector
 - **Module testing**: Each module includes `if __name__ == "__main__"` test sections
-- **Command testing**: Test voice command recognition with `regex_command_functions.py`
+- **Command testing**: Test voice command recognition with `regex_command_tooling.py`
 
 To test individual components:
 ```bash
@@ -236,7 +236,7 @@ python ril_aioc.py                # Test AIOC hardware interface
 python ril_digirig.py             # Test Digirig hardware interface
 python prompts.py                 # Test prompt management
 python wake_word_detector.py      # Test wake word detection
-python regex_command_functions.py # Test command identification
+python regex_command_tooling.py   # Test command identification
 python periodically_identify.py   # Test periodic identification
 ```
 

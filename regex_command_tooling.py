@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# regex_command_functions.py - Voice Command Handling
+# regex_command_tooling.py - Voice Command Handling
 #
 # This module handles the identification and parsing of voice commands
 # for the W6RGC-AI voice assistant. It checks for specific keywords
@@ -48,30 +48,30 @@ def handle_command(operator_text):
 
     # Check for termination command
     if re.search(rf"{re.escape(BOT_NAME)}.*?\b(break|brake|exit|quit|shutdown)\b", text_to_check, re.IGNORECASE):
-        print("🛑 Termination command detected by regex_command_functions.py.")
+        print("🛑 Termination command detected by regex_command_tooling.py.")
         return "terminate"
 
     # Check for status command
     if re.search(rf"{re.escape(BOT_NAME)}.*?\b(status)\b", text_to_check, re.IGNORECASE):
-        print("⚙️ Status command detected by regex_command_functions.py.")
+        print("⚙️ Status command detected by regex_command_tooling.py.")
         return "status"
 
     # Check for reset/new chat command
     if re.search(rf"{re.escape(BOT_NAME)}.*?\b(reset|start a new chat|new chat)\b", text_to_check, re.IGNORECASE):
-        print("🔄 Reset command detected by regex_command_functions.py.")
+        print("🔄 Reset command detected by regex_command_tooling.py.")
         return "reset"
 
     # Check for identify command
     if re.search(rf"{re.escape(BOT_NAME)}.*?\b(identify)\b", text_to_check, re.IGNORECASE) or \
        re.search(r"\b(identify|call sign|what is your call sign|who are you)\b", text_to_check, re.IGNORECASE):
-        print("🆔 Identify command detected by regex_command_functions.py.")
+        print("🆔 Identify command detected by regex_command_tooling.py.")
         return "identify"
         
     return None
 
 # Test section for standalone execution
 if __name__ == "__main__":
-    print("🧪 Testing regex_command_functions.py")
+    print("🧪 Testing regex_command_tooling.py")
     print(f"Using BOT_NAME: {BOT_NAME}")
     print(f"Checking first {MAX_COMMAND_WORDS} words for commands")
     
@@ -96,4 +96,4 @@ if __name__ == "__main__":
         else:
             print("❌ No command detected")
     
-    print("\n�� Test complete!") 
+    print("\nTest complete!") 
