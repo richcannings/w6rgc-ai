@@ -50,7 +50,7 @@ class PeriodicIdentifier:
             f"This is {BOT_NAME}. Call sign {BOT_PHONETIC_CALLSIGN}. "
             f"I am an off grid Artificial Intelligence assistant. "
             f"Ask me anything by using my wake word {BOT_NAME}. "
-            f"For example, {BOT_NAME}, How shall I prepare for a power outage at my house in Santa Cruz, California. "
+            f"For example, {BOT_NAME}. {BOT_NAME}, How shall I prepare for a power outage at my house in Santa Cruz, California. "
             f"To turn {BOT_NAME} off, repeat {BOT_NAME} break a few times. Ask {BOT_NAME} about more commands."
         )
         
