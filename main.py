@@ -85,15 +85,15 @@ from constants import (
     BOT_NAME,
     BOT_PHONETIC_CALLSIGN,
     
+    # Speech recognition configuration
+    WHISPER_MODEL,
+    
     # AI/LLM configuration
     HAS_INTERNET,
-    OLLAMA_URL,
     DEFAULT_OFFLINE_MODEL,
     DEFAULT_ONLINE_MODEL,
     
     # TTS configuration
-    TTS_MODEL_FAST_PITCH,
-    TTS_MODEL_SPEEDY_SPEECH,
     TTS_MODEL_TACOTRON2,
     TTS_INFERENCE_NOISE_SCALE,
     TTS_INFERENCE_NOISE_SCALE_DP,
@@ -291,7 +291,7 @@ periodic_identifier = PeriodicIdentifier(
 
 print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
-print(f"Speech recognition: Whisper version:{speech_recognition_engine.version}")
+print(f"Speech recognition: Whisper model: {WHISPER_MODEL}")
 if HAS_INTERNET:
     print(f"AI model: {DEFAULT_ONLINE_MODEL} (online)")
 else:
