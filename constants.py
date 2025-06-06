@@ -57,6 +57,7 @@ MAX_COMMAND_WORDS = 10  # maximum words to check for commands (prevents accident
 
 # Audio Sample Rates
 WHISPER_TARGET_SAMPLE_RATE = 16000  # Whisper expects 16kHz
+WHISPER_MODEL = "medium.en"  # Whisper model size to use. Default is "small" or "small.en"
 DEFAULT_DEVICE_SAMPLE_RATE = 44100  # Standard audio device sample rate
 
 # Audio Channels
@@ -87,7 +88,7 @@ DEFAULT_RIL_TYPE = "digirig" # RIL_TYPE_AIOC  # Change this to switch between AI
 
 # Serial Port Configuration
 DEFAULT_AIOC_SERIAL_PORT = "/dev/ttyACM0"
-DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB2"
+DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB0"
 SERIAL_TIMEOUT = 1  # seconds
 
 # ============================================================================
@@ -168,8 +169,3 @@ TEMP_AUDIO_DIR = "/tmp"  # Could be made configurable
 
 # Audio Processing
 AUDIO_FRAME_MS = 100  # milliseconds per audio frame for processing 
-
-# ============================================================================
-# DIY Natural Language Understanding
-# ============================================================================
-NLU_MAGIC_WORD = "Brouhaha"

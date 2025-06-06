@@ -67,7 +67,6 @@ import os
 import json
 from TTS.api import TTS as CoquiTTS
 import re
-
 # modules custom to the w6rgc/ai project
 import wake_word_detector
 import regex_command_tooling
@@ -320,6 +319,8 @@ while True:
             print("❌ Wake word not detected, continuing to listen...")
             continue
             
+        # TODO(rich): Kick off a thread to play notification audio clip to notify the user that the bot got the message.
+
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
         operator_text = speech_recognition_engine.get_full_command_after_wake_word()
         

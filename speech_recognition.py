@@ -7,12 +7,13 @@ from constants import (
     AUDIO_THRESHOLD,
     FRAME_DURATION,
     SILENCE_DURATION,
-    WHISPER_TARGET_SAMPLE_RATE
+    WHISPER_TARGET_SAMPLE_RATE,
+    WHISPER_MODEL
 )
 
 class SpeechRecognitionEngine:
     def __init__(self, ril_interface):
-        self.model = whisper.load_model("small")
+        self.model = whisper.load_model(WHISPER_MODEL)
         self.ril_interface = ril_interface
         
     @property
