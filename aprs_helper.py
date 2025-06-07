@@ -44,10 +44,50 @@ VIEW_MESSAGE_URL = "http://findu.com/cgi-bin/msg.cgi?call={receiver}"
 
 APRS_MESSAGE_MAX_LENGTH = 50
 
+PHONETIC_ALPHABET = {
+  "A": "Alpha",
+  "B": "Bravo",
+  "C": "Charlie",
+  "D": "Delta",
+  "E": "Echo",
+  "F": "Foxtrot",
+  "G": "Golf",
+  "H": "Hotel",
+  "I": "India",
+  "J": "Juliett",
+  "K": "Kilo",
+  "L": "Lima",
+  "M": "Mike",
+  "N": "November",
+  "O": "Oscar",
+  "P": "Papa",
+  "Q": "Quebec",
+  "R": "Romeo",
+  "S": "Sierra",
+  "T": "Tango",
+  "U": "Uniform",
+  "V": "Victor",
+  "W": "Whiskey",
+  "X": "X-ray",
+  "Y": "Yankee",
+  "Z": "Zulu",
+  "0": "Zero",
+  "1": "One",
+  "2": "Two",
+  "3": "Three",
+  "4": "Four",
+  "5": "Five",
+  "6": "Six",
+  "7": "Seven",
+  "8": "Eight",
+  "9": "Nine",
+  "-": "Dash",
+  "/": "Stroke"
+}
+
 def send_aprs_message(sender, receiver, message):
     url = SEND_MESSAGE_URL.format(sender=sender, receiver=receiver, message=message)
-    # Force the message to be less than or equal to APRS_MESSAGE_MAX_LENGTH
-    #  characters
+    # Force the message to be less than or equal to APRS_MESSAGE_MAX_LENGTH characters
     message = message[:APRS_MESSAGE_MAX_LENGTH]
     response = requests.get(url)
     return response.text
@@ -55,7 +95,9 @@ def send_aprs_message(sender, receiver, message):
 def get_aprs_messages(receiver):
     print(f"Getting APRS messages for {receiver}")
     url = VIEW_MESSAGE_URL.format(receiver=receiver)
+    print(f"RICHCANNINGS: APRS view URL: \"{url}\"")
     response = requests.get(url)
+    print(f"RICHCANNINGS: APRS response: \"{response.text}\"")
     messages = _parse_aprs_messages(response.text)
     return _natural_language_messages(messages)
 
@@ -91,7 +133,7 @@ def _parse_aprs_messages(html_content):
         cells = row.find_all('td')
         
         # Ensure the row has the expected number of cells (5 in this case)
-        if len(cells) == 5:
+        if len(cells) >= 5:
             # Extract the text from each relevant cell and strip whitespace
             from_callsign = cells[0].get_text(strip=True)
             to_callsign = cells[1].get_text(strip=True)
@@ -110,21 +152,19 @@ def _parse_aprs_messages(html_content):
     return messages_list
 
 def _natural_language_messages(messages):
-    natural_language_response = "Your last 5 A P R S messages are:\n"
-    for i, msg in enumerate(messages, 1):
-         natural_language_response += f"({i}) From: {_space_out_str(msg['From'])}, To: {_space_out_str(msg['To'])}, Message: {msg['Message']}\n"
-    natural_language_response += "End messages"
+    natural_language_response = """Your last 5 A-P-R-S messages are:\n"""
+    for i, msg in enumerate(messages[:5], 1):
+         natural_language_response += f"""
+                Message {i}, from {_phonetic_alphabet(msg['From'])}.
+                The message is {msg['Message']}.\n"""
+    natural_language_response += "End of messages"
     return natural_language_response
 
-
-def _space_out_str(input_string):
-  """
-  Adds a space between each character of the input string.
-
-  Args:
-    input_string: The string to be processed.
-
-  Returns:
-    A new string with spaces between each original character.
-  """
-  return " ".join(input_string)
+def _phonetic_alphabet(input_string):
+  return_string = ""
+  for char in input_string:
+    if char in PHONETIC_ALPHABET:
+      return_string += PHONETIC_ALPHABET[char] + " "
+    else:
+      return_string += char + " "
+  return return_string

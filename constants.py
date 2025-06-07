@@ -25,23 +25,46 @@
 from datetime import datetime
 
 # ============================================================================
-# RADIO/HAM RADIO CONFIGURATION
+# Prompt / Chatbot Constants
 # ============================================================================
 
 # Bot Identity
-OPERATOR_NAME = "Operator"
 BOT_NAME = "seven" # Here are the following wake word / bot name options: seven (7), marvin , shiela, zero (0), happy, forward.
 BOT_CALLSIGN = "W6RGC/AI"
 BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A"
 BOT_PHONETIC_CALLSIGN = "Whiskey 6 Romeo Golf Charlie Stroke Alpha India"
 
+# User Identity
+OPERATOR_NAME = "Operator"
+
 # ============================================================================
-# AUDIO PROCESSING CONSTANTS
+# Hardware Configuration
 # ============================================================================
 
+# Radio Interface Layer (RIL) Configuration
+RIL_TYPE_AIOC = "aioc"
+RIL_TYPE_DIGIRIG = "digirig"
+DEFAULT_RIL_TYPE = RIL_TYPE_DIGIRIG # Change this to switch between AIOC and Digirig
+
+# Serial Port Configuration
+DEFAULT_AIOC_SERIAL_PORT = "/dev/ttyACM0"
+DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB0"
+SERIAL_TIMEOUT = 1  # seconds
+
+# ============================================================================
+# Speech Recognition / Audio Processing Constants
+# ============================================================================
+
+# Speech Recognition Model
+WHISPER_MODEL = "medium.en"  # Whisper model size to use. Default is "small" or "small.en"
+
+# Audio Sample Rates
+WHISPER_TARGET_SAMPLE_RATE = 16000  # Whisper expects 16kHz
+DEFAULT_DEVICE_SAMPLE_RATE = 44100  # Standard audio device sample rate
+
 # Audio Detection Thresholds
-AUDIO_THRESHOLD = 0.02  # Adjust as needed for your mic/environment
-SILENCE_DURATION = 2.0  # seconds of silence to consider end of speech
+AUDIO_THRESHOLD = 0.1  # Adjust as needed for your mic/environment (was 0.02)
+SILENCE_DURATION = 1.0  # seconds of silence to consider end of speech (was 2.0)
 FRAME_DURATION = 0.1   # seconds per audio frame
 
 # Carrier Sense Configuration
@@ -55,54 +78,35 @@ PERIODIC_ID_INTERVAL_MINUTES = 10  # minutes between automatic identification an
 # Command Detection Configuration
 MAX_COMMAND_WORDS = 10  # maximum words to check for commands (prevents accidental triggers)
 
-# Audio Sample Rates
-WHISPER_TARGET_SAMPLE_RATE = 16000  # Whisper expects 16kHz
-WHISPER_MODEL = "medium.en"  # Whisper model size to use. Default is "small" or "small.en"
-DEFAULT_DEVICE_SAMPLE_RATE = 44100  # Standard audio device sample rate
-
 # Audio Channels
 DEFAULT_AUDIO_CHANNELS = 1  # Mono audio
 
 # ============================================================================
-# WAKE WORD DETECTION
+# Wake Word Detection
 # ============================================================================
 
 # AST Wake Word Detection
 DEFAULT_WAKE_WORD = BOT_NAME # syncing bot name with wake word
+AST_MODEL_NAME = "MIT/ast-finetuned-speech-commands-v2"
 AST_CONFIDENCE_THRESHOLD = 0.7
 AST_CHUNK_LENGTH_S = 1.0
-AST_MODEL_NAME = "MIT/ast-finetuned-speech-commands-v2"
 
 # Wake Word Detection Method
 WAKE_WORD_METHOD_AST = "ast"
 DEFAULT_WAKE_WORD_METHOD = WAKE_WORD_METHOD_AST
 
 # ============================================================================
-# HARDWARE CONFIGURATION
-# ============================================================================
-
-# Radio Interface Layer (RIL) Configuration
-RIL_TYPE_AIOC = "aioc"
-RIL_TYPE_DIGIRIG = "digirig"
-DEFAULT_RIL_TYPE = "digirig" # Change this to switch between AIOC and Digirig
-
-# Serial Port Configuration
-DEFAULT_AIOC_SERIAL_PORT = "/dev/ttyACM0"
-DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB0"
-SERIAL_TIMEOUT = 1  # seconds
-
-# ============================================================================
-# INTELLIGENCE ENGINE (LLM) CONFIGURATION
+# Intelligence Engine (LLM) Configuration
 # ============================================================================
 
 # Internet Connectivity and LLM Selection
 HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
 
-# Ollama Configuration
+# Ollama Configuration (offline)
 OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_OFFLINE_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
 
-# Gemini Configuration
+# Gemini Configuration (online)
 GEMINI_API_KEY_FILE = "gemini_api_key.txt"
 DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash-preview-05-20" # "gemini-1.5-flash" 
 MAX_RETRIES = 3
@@ -111,11 +115,11 @@ REQUEST_TIMEOUT = 30  # seconds
 
 
 # ============================================================================
-# TTS (Text-to-Speech) CONFIGURATION
+# TTS (Text-to-Speech) Configuration
 # ============================================================================
 
 # Script File Path
-WRITE_SCRIPT_TO_FILE = True
+WRITE_SCRIPT_TO_FILE = False
 
 # Generate timestamped script file path
 _now = datetime.now()
@@ -149,7 +153,7 @@ TEST_AMPLITUDE = 0.5  # Audio amplitude for test signals
 TEST_TTS_TEXT = "This is a test of the text to speech system. How does it sound?"
 
 # ============================================================================
-# DEVICE DETECTION
+# GPU/CPU DEVICE DETECTION
 # ============================================================================
 
 # CUDA/GPU Configuration
@@ -169,3 +173,48 @@ TEMP_AUDIO_DIR = "/tmp"  # Could be made configurable
 
 # Audio Processing
 AUDIO_FRAME_MS = 100  # milliseconds per audio frame for processing 
+
+# ============================================================================
+# PHONETIC ALPHABET for APRS messages
+# ============================================================================
+
+PHONETIC_ALPHABET = {
+  "A": "Alpha",
+  "B": "Bravo",
+  "C": "Charlie",
+  "D": "Delta",
+  "E": "Echo",
+  "F": "Foxtrot",
+  "G": "Golf",
+  "H": "Hotel",
+  "I": "India",
+  "J": "Juliett",
+  "K": "Kilo",
+  "L": "Lima",
+  "M": "Mike",
+  "N": "November",
+  "O": "Oscar",
+  "P": "Papa",
+  "Q": "Quebec",
+  "R": "Romeo",
+  "S": "Sierra",
+  "T": "Tango",
+  "U": "Uniform",
+  "V": "Victor",
+  "W": "Whiskey",
+  "X": "X-ray",
+  "Y": "Yankee",
+  "Z": "Zulu",
+  "0": "Zero",
+  "1": "One",
+  "2": "Two",
+  "3": "Three",
+  "4": "Four",
+  "5": "Five",
+  "6": "Six",
+  "7": "Seven",
+  "8": "Eight",
+  "9": "Nine",
+  "-": "Dash",
+  "/": "Stroke"
+}
