@@ -146,11 +146,11 @@ All notable changes to the W6RGC-AI off grid ham radio AI voice assistant projec
 - Serial PTT control
 - Basic wake word detection 
 
-## [Unreleased] - YYYY-MM-DD
+## [2.3.0] - 2025-01-05
 
 ### Added
 - **VoiceAPRS Functionality**: 
-    - Integrated APRS message sending and receiving capabilities using `helper_aprs.py`.
+    - Integrated APRS message sending and receiving capabilities using `aprs_helper.py`.
     - Added `FunctionDeclaration` and tool integration in `llm_gemini_online.py` for Gemini to understand and execute APRS-related voice commands (send/receive messages).
     - Operators can now ask the AI to read their APRS messages or send messages to other callsigns using natural language.
     - This feature uses `findu.com` for APRS operations and requires an internet connection.
@@ -158,6 +158,7 @@ All notable changes to the W6RGC-AI off grid ham radio AI voice assistant projec
 - **Periodic Station Identification**: Implemented `periodically_identify.py` module to automatically transmit station identification at configurable intervals (default 10 minutes). Integrated into `main.py`.
 - **Carrier Sense Functionality**: Added carrier sense to both `ril_aioc.py` and `ril_digirig.py` to check for channel activity before PTT activation. Includes configurable duration, retries, and delay in `constants.py`.
 - **RIL Factory**: Introduced `create_radio_interface_layer` factory function in `main.py` to dynamically instantiate the correct RIL (AIOC or Digirig) based on configuration.
+- **Enhanced Documentation**: Comprehensive updates to `README.md` with new sections on VoiceAPRS, carrier sense, periodic identification, troubleshooting, and testing.
 
 ### Changed
 - **Python File Boilerplates**: Standardized the boilerplate comments (shebang, file description, author, copyright, Apache 2.0 license) across all Python files for consistency. Added missing boilerplates where necessary.
@@ -165,6 +166,7 @@ All notable changes to the W6RGC-AI off grid ham radio AI voice assistant projec
     - Integrated Digirig support and RIL factory.
     - Integrated periodic identification system.
     - Updated RIL initialization to use the factory pattern.
+    - Enhanced error handling and status reporting.
 - **`constants.py`**:
     - Added `RIL_TYPE_DIGIRIG`, `DEFAULT_DIGIRIG_SERIAL_PORT`, and `DEFAULT_RIL_TYPE` for Digirig configuration.
     - Added `CARRIER_SENSE_DURATION`, `CARRIER_SENSE_MAX_RETRIES`, `CARRIER_SENSE_RETRY_DELAY` for carrier sense feature.
@@ -172,11 +174,11 @@ All notable changes to the W6RGC-AI off grid ham radio AI voice assistant projec
 - **`ril_aioc.py`**: 
     - Implemented carrier sense logic in `ptt_on` method.
     - Refactored PTT logic to incorporate carrier sense checks and retries.
-- **`commands.py`**:
+- **`regex_command_tooling.py`**:
     - Updated to use `MAX_COMMAND_WORDS` from `constants.py` to limit command parsing scope, preventing accidental triggers during longer sentences.
+- **Module Organization**: Improved code structure with better separation of concerns between hardware interfaces, LLM integration, and audio processing.
 
-### Removed
-- N/A
-
-### Fixed
-- N/A 
+### Improved
+- **Hardware Compatibility**: Enhanced support for both AIOC and Digirig adapters with automatic detection and configuration.
+- **Audio Processing**: Better audio device management and reset functionality to prevent conflicts.
+- **Error Recovery**: Improved error handling throughout the application with graceful fallbacks. 

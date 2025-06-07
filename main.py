@@ -10,7 +10,7 @@
 #  - Whisper speech recognition for accurate transcription
 #  - Ollama LLM integration for conversational AI
 #  - CoquiTTS for natural-sounding speech synthesis
-#  - AIOC adapter support for PTT control
+#  - Radio interface adapter support for PTT control
 #  - Automatic audio device detection and configuration
 #  - Centralized configuration through constants.py
 #
@@ -67,7 +67,8 @@ import os
 import json
 from TTS.api import TTS as CoquiTTS
 import re
-# modules custom to the w6rgc/ai project
+
+# modules part of the w6rgc/ai project
 import wake_word_detector
 import regex_command_tooling
 from speech_recognition import SpeechRecognitionEngine
@@ -224,10 +225,9 @@ def play_tts_audio(text_to_speak, tts_engine, radio_interface):
 
 ### INITIALIZATION ###
 
-## Radio Interface Layer setup
-# Initialize the appropriate Radio Interface Layer based on configuration
+# Initialize the Radio Interface Layer
 try:
-    print(f"🔧 Selected RIL type: {DEFAULT_RIL_TYPE.upper()}")
+    print(f"🔧 Selected RIL type: {DEFAULT_RIL_TYPE}")
     ril = create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE)
     
     # Get necessary info from the RIL instance (same interface for both AIOC and Digirig)
@@ -253,7 +253,7 @@ context_mgr = ContextManager() # Initialize the context manager
 # Initialize Whisper voice recognition
 speech_recognition_engine = SpeechRecognitionEngine(ril)
 
-# Initialize CoquiTTS with a faster model for better real-time performance
+# Initialize CoquiTTS (with a faster model for better real-time performance)
 try:
     coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
     print(f"✅ Using TTS model: {TTS_MODEL_TACOTRON2} (forced for testing, slower but reliable)")
@@ -273,7 +273,7 @@ if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthes
     except:
         print("⚠️  Could not apply TTS speed optimizations")
 
-# Initialize wake word detector using AST method
+# Initialize wake word detector (using AST method)
 wake_detector = wake_word_detector.create_wake_word_detector(
     method=WAKE_WORD_METHOD_AST, 
     device_sample_rate=samplerate,
@@ -286,7 +286,9 @@ periodic_identifier = PeriodicIdentifier(
     radio_interface=ril,
     play_tts_function=play_tts_audio  # Use the file-based method for reliability
 )
+periodic_identifier.start()
 
+# Print startup information
 print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper model: {WHISPER_MODEL}")
@@ -299,15 +301,12 @@ print("=" * 50)
 
 ### MAIN LOOP ###
 
-# Start periodic identification
-periodic_identifier.start()
-
 while True:
     try:
         # Step 1: Wait for wake word detection
         print(f"\n🎤 Listening for wake word '{DEFAULT_WAKE_WORD}'...")
         
-        # AST detector returns boolean
+        # AST detector listens and returns when the wake word was detected
         wake_detected = wake_detector.listen_for_wake_word(
             audio_device_index=audio_index,
             debug=False
@@ -319,19 +318,20 @@ while True:
             
         # TODO(rich): Kick off a thread to play notification audio clip to notify the user that the bot got the message.
 
+        # Step 2: Transcribe the audio to text
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
         operator_text = speech_recognition_engine.get_full_command_after_wake_word()
         
-        # Step 2: Process the command
+        # Step 3: Process the operator's input (Assumes the wake word is the same as the bots name.)
 
-        # RICHC: This is a hack to get the wake word detector to pass the name of the bot, so the bot
-        # receives the entire transmission.
+        # This is a hack to get the wake word detector to pass the name of the bot, so the bot
+        # receives the entire transmission. This may or may not be valuable.
         # operator_text = f"{BOT_NAME}, {operator_text}"
         
-        # Assumes the wake word is the same as the bots name.
         print(f"🗣️  Processing command: '{operator_text}'")
         
-        # Identify the command using the commands module
+        # Optional step: Identify the command using the commands module
+        # Rudimentary command handling. TODO(richc): Complete refactor based on AI tooling/function calling
         command_type = regex_command_tooling.handle_command(operator_text)
 
         if command_type == "terminate":
@@ -361,6 +361,7 @@ while True:
             play_tts_audio("My context has been reset. I am ready for a new conversation.", 
                            coqui_tts_engine, ril)
             continue
+        # TODO(richc): Remove? The bot identifies itself when it is asked to do so.
         #elif command_type == "identify":
         #    print("🆔 Identify command identified by main.py.")
         #    identify_response = f"This is {BOT_PHONETIC_CALLSIGN}."
@@ -368,13 +369,14 @@ while True:
         #    periodic_identifier.restart_timer
         #    continue
         else:
-            # If no command was handled, proceed with conversation
+            # Step 4: If no command was handled, proceed with conversation between the operator and the bot
             print(f"💬 Conversation request detected")
             
-            # Ask AI: Send transcribed test from the operator to the AI
+            # Add the operator's request to the context
             current_prompt = context_mgr.add_operator_request_to_context(operator_text)
             
             # Choose LLM based on internet availability
+            # TODO(richc): Decide which LLM to during initialization
             if HAS_INTERNET:
                 print("🤖 Sending to Gemini...")
                 print(f"Current prompt: {current_prompt}")
@@ -392,16 +394,16 @@ while True:
                     # context_mgr.add_ai_response_to_context(f"[Spoke APRS messages: {len(tts_message)} chars]")
                     periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
-
             else:
                 print("🤖 Sending to Ollama...")
                 print(f"Current prompt: {current_prompt}")
                 ai_response = ask_ollama(current_prompt)
                 print(f"🤖 Ollama replied: {ai_response}")
                 
+            # add the AI's response to the context
             context_mgr.add_ai_response_to_context(ai_response)
             
-            # Speak response
+            # Step 5: Speak response
             print("🔊 Speaking response...")
             ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
             play_tts_audio_fast(ai_response, coqui_tts_engine, ril)
@@ -416,6 +418,8 @@ while True:
         print(f"❌ Error in main loop: {e}")
         continue
 
-print("🏁 Ham Radio AI Assistant shutdown complete.")
+### SHUTDOWN ###
+
 periodic_identifier.stop() # Stop periodic identification
 ril.close() # Close the RIL (which closes serial conn)
+print("🏁 Ham Radio AI Assistant shutdown complete.")

@@ -150,12 +150,29 @@ def _parse_aprs_messages(html_content):
             
     return messages_list
 
+def _format_message(message):
+    # Split at '{' if present and take only the first part
+    if '{' in message:
+        message = message.split('{')[0]
+    
+    # Handle @ followed by numbers
+    if '@' in message:
+        parts = message.split('@')
+        for i in range(1, len(parts)):
+            if parts[i][0].isdigit():
+                # Add spaces between numbers
+                numbers = ' '.join(parts[i][0])
+                parts[i] = numbers + parts[i][1:]
+        message = '@'.join(parts)
+    
+    return message
+
 def _natural_language_messages(messages):
-    natural_language_response = """Your last 5 A-P-R-S messages are:\n"""
+    natural_language_response = f"Here are your last {len(messages)} Automatic Packet Reporting System messages.\n"
     for i, msg in enumerate(messages[:5], 1):
          natural_language_response += f"""
                 Message {i}, from {_phonetic_alphabet(msg['From'])}.
-                The message is {msg['Message']}.\n"""
+                The message is {_format_message(msg['Message'])}.\n"""
     natural_language_response += "End of messages"
     return natural_language_response
 

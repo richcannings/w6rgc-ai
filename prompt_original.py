@@ -1,4 +1,10 @@
-# prompt.py - Knowledge base for the W6RGC/AI ham radio AI voice assistant
+#!/usr/bin/env python3
+# prompt_original.py - Original Knowledge Base for W6RGC/AI Ham Radio Voice Assistant
+#
+# This module contains the original prompt and knowledge base for the W6RGC/AI 
+# Ham Radio Voice Assistant. It includes training data for QSOs, net control,
+# ICS-213 message handling, and other ham radio operations.
+#
 # Author: Rich Cannings <rcannings@gmail.com>
 # Copyright 2025 Rich Cannings
 #
@@ -7,6 +13,12 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from constants import OPERATOR_NAME, BOT_NAME, BOT_PHONETIC_CALLSIGN, BOT_CALLSIGN
 

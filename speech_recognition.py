@@ -1,3 +1,32 @@
+#!/usr/bin/env python3
+# speech_recognition.py - Whisper-based Speech Recognition
+#
+# This module provides high-quality speech recognition for the W6RGC/AI 
+# Ham Radio Voice Assistant using OpenAI's Whisper model. It handles 
+# audio capture, processing, and transcription after wake word detection.
+#
+# Key Features:
+#  - OpenAI Whisper integration for accurate speech-to-text
+#  - Automatic sample rate conversion for model compatibility
+#  - Voice activity detection with configurable thresholds
+#  - Integration with Radio Interface Layer for audio capture
+#  - Silence detection for natural conversation flow
+#
+# Author: Rich Cannings <rcannings@gmail.com>
+# Copyright 2025 Rich Cannings
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import whisper
 import numpy as np
 import sounddevice as sd
