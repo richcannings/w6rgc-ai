@@ -182,7 +182,7 @@ class RadioInterfaceLayerDigiRig:
                     self.serial_conn.setRTS(True)
                     # self.serial_conn.setDTR(True)
                     time.sleep(0.1)  # Delay for PTT activation
-                    print("PTT ON")
+                    print("\033[92m📡 PTT ON\033[0m")
                     return
                 except serial.SerialException as e:
                     print(f"Error setting PTT ON: {e}")
@@ -203,7 +203,7 @@ class RadioInterfaceLayerDigiRig:
                 time.sleep(0.1) # Small delay before PTT off
                 self.serial_conn.setRTS(False)
                 # self.serial_conn.setDTR(False)
-                print("PTT OFF")
+                print("\033[91m📻 PTT OFF\033[0m")
             except serial.SerialException as e:
                 print(f"Error setting PTT OFF: {e}")
         else:
@@ -326,10 +326,10 @@ if __name__ == '__main__':
         print(f"Input Stream Params: {stream_params}")
 
         # Test PTT
-        print("Testing PTT ON...")
+        print("\033[94m🧪 Testing PTT ON...\033[0m")
         digirig_ril.ptt_on()
         time.sleep(1)
-        print("Testing PTT OFF...")
+        print("\033[94m🧪 Testing PTT OFF...\033[0m")
         digirig_ril.ptt_off()
 
         # Test Playback (requires a dummy audio signal)

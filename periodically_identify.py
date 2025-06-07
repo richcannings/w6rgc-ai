@@ -28,18 +28,18 @@ from constants import (
 )
 
 class PeriodicIdentifier:
-    def __init__(self, tts_engine, aioc_interface, play_tts_function, interval_minutes=PERIODIC_ID_INTERVAL_MINUTES):
+    def __init__(self, tts_engine, radio_interface, play_tts_function, interval_minutes=PERIODIC_ID_INTERVAL_MINUTES):
         """
         Initializes the periodic identifier.
         
         Args:
             tts_engine: The CoquiTTS engine instance
-            aioc_interface: The AIOC radio interface layer instance
+            radio_interface: The radio interface layer instance
             play_tts_function: Function to call for TTS playback (e.g., play_tts_audio)
             interval_minutes (int): Minutes between identification announcements
         """
         self.tts_engine = tts_engine
-        self.aioc_interface = aioc_interface
+        self.radio_interface = radio_interface
         self.play_tts_function = play_tts_function
         self.interval_seconds = interval_minutes * 60
         self.running = False
@@ -94,7 +94,7 @@ class PeriodicIdentifier:
                     self.play_tts_function(
                         self.identification_message,
                         self.tts_engine,
-                        self.aioc_interface
+                        self.radio_interface
                     )
                     print("📡 Periodic identification transmission complete")
                     
@@ -110,7 +110,7 @@ class PeriodicIdentifier:
             self.play_tts_function(
                 self.identification_message,
                 self.tts_engine,
-                self.aioc_interface
+                self.radio_interface
             )
             print("📡 Manual identification transmission complete")
         except Exception as e:

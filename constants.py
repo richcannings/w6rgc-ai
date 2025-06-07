@@ -48,7 +48,7 @@ DEFAULT_RIL_TYPE = RIL_TYPE_DIGIRIG # Change this to switch between AIOC and Dig
 
 # Serial Port Configuration
 DEFAULT_AIOC_SERIAL_PORT = "/dev/ttyACM0"
-DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB0"
+DEFAULT_DIGIRIG_SERIAL_PORT = "/dev/ttyUSB1"
 SERIAL_TIMEOUT = 1  # seconds
 
 # ============================================================================

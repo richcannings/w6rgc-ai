@@ -143,15 +143,13 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=Non
     else:
         raise ValueError(f"Unsupported RIL type: {ril_type}. Supported types: {RIL_TYPE_AIOC}, {RIL_TYPE_DIGIRIG}")
 
-
-
-def play_tts_audio_fast(text_to_speak, tts_engine, aioc_interface):
+def play_tts_audio_fast(text_to_speak, tts_engine, radio_interface):
     """
     Ultra-fast TTS audio playback using in-memory processing (no file I/O).
-    Handles PTT, audio preparation, and uses RadioInterfaceLayerAIOC for sd.play().
+    Handles PTT, audio preparation, and uses RadioInterfaceLayer for sd.play().
     """
     try:
-        aioc_interface.reset_audio_device() # Reset before generating/playing audio
+        radio_interface.reset_audio_device() # Reset before generating/playing audio
         
         print("🔊 Generating TTS audio (in-memory)...")
         tts_audio_data = tts_engine.tts(text=text_to_speak)
@@ -168,16 +166,16 @@ def play_tts_audio_fast(text_to_speak, tts_engine, aioc_interface):
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
         print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
-        aioc_interface.ptt_on()
+        radio_interface.ptt_on()
         time.sleep(0.2) # PTT engage delay
-        aioc_interface.play_audio(tts_audio_data, tts_sample_rate)
+        radio_interface.play_audio(tts_audio_data, tts_sample_rate)
         
     except Exception as e:
         print(f"❌ Error in fast TTS playback (main.py): {e}")
         print("🔄 Falling back to file-based method...")
-        play_tts_audio(text_to_speak, tts_engine, aioc_interface) # Fallback already handles PTT
+        play_tts_audio(text_to_speak, tts_engine, radio_interface)
     finally:
-        aioc_interface.ptt_off() # Ensure PTT is off
+        radio_interface.ptt_off() # Ensure PTT is off
         # Force garbage collection to prevent memory accumulation
         import gc
         if 'tts_audio_data' in locals():
@@ -185,13 +183,13 @@ def play_tts_audio_fast(text_to_speak, tts_engine, aioc_interface):
         gc.collect()
         print("✅ Audio transmission cycle complete (fast mode). PTT OFF.")
 
-def play_tts_audio(text_to_speak, tts_engine, aioc_interface):
+def play_tts_audio(text_to_speak, tts_engine, radio_interface):
     """
     Optimized TTS audio playback with file-based fallback.
-    Handles PTT, audio preparation, and uses RadioInterfaceLayerAIOC for sd.play().
+    Handles PTT, audio preparation, and uses RadioInterfaceLayer for sd.play().
     """
     try:
-        aioc_interface.reset_audio_device() # Reset before generating/playing audio
+        radio_interface.reset_audio_device() # Reset before generating/playing audio
 
         print("🔊 Generating TTS audio (file-based fallback)...")
         tts_engine.tts_to_file(
@@ -208,14 +206,14 @@ def play_tts_audio(text_to_speak, tts_engine, aioc_interface):
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
         print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
-        aioc_interface.ptt_on()
+        radio_interface.ptt_on()
         time.sleep(0.3) # PTT engage delay (slightly longer for file method just in case)
-        aioc_interface.play_audio(tts_audio_data, tts_sample_rate)
+        radio_interface.play_audio(tts_audio_data, tts_sample_rate)
 
     except Exception as e:
         print(f"❌ Error in TTS playback (main.py file-based): {e}")
     finally:
-        aioc_interface.ptt_off() # Ensure PTT is off
+        radio_interface.ptt_off() # Ensure PTT is off
         if os.path.exists(TTS_OUTPUT_FILE):
             os.remove(TTS_OUTPUT_FILE)
         import gc
@@ -285,7 +283,7 @@ wake_detector = wake_word_detector.create_wake_word_detector(
 # Initialize periodic identifier
 periodic_identifier = PeriodicIdentifier(
     tts_engine=coqui_tts_engine,
-    aioc_interface=ril,
+    radio_interface=ril,
     play_tts_function=play_tts_audio  # Use the file-based method for reliability
 )
 
