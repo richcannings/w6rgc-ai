@@ -44,6 +44,7 @@ VIEW_MESSAGE_URL = "http://findu.com/cgi-bin/msg.cgi?call={receiver}"
 
 APRS_MESSAGE_MAX_LENGTH = 50
 
+# For preprocessing messages for Text-to-Speech
 PHONETIC_ALPHABET = {
   "A": "Alpha",
   "B": "Bravo",
@@ -95,9 +96,7 @@ def send_aprs_message(sender, receiver, message):
 def get_aprs_messages(receiver):
     print(f"Getting APRS messages for {receiver}")
     url = VIEW_MESSAGE_URL.format(receiver=receiver)
-    print(f"RICHCANNINGS: APRS view URL: \"{url}\"")
     response = requests.get(url)
-    print(f"RICHCANNINGS: APRS response: \"{response.text}\"")
     messages = _parse_aprs_messages(response.text)
     return _natural_language_messages(messages)
 

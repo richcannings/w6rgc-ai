@@ -141,7 +141,7 @@ TTS_INFERENCE_SIGMA = 1.0
 TTS_OUTPUT_FILE = 'ollama_tts.wav'
 
 # ============================================================================
-# TESTING/DEBUG CONSTANTS
+# Testing / Debug Constants
 # ============================================================================
 
 # Test Audio Generation
@@ -153,7 +153,7 @@ TEST_AMPLITUDE = 0.5  # Audio amplitude for test signals
 TEST_TTS_TEXT = "This is a test of the text to speech system. How does it sound?"
 
 # ============================================================================
-# GPU/CPU DEVICE DETECTION
+# GPU/CPU Device Detection
 # ============================================================================
 
 # CUDA/GPU Configuration
@@ -161,60 +161,15 @@ CUDA_DEVICE = "cuda:0"
 CPU_DEVICE = "cpu"
 
 # ============================================================================
-# FILE PATHS
+# File Paths
 # ============================================================================
 
 # Temporary Files
 TEMP_AUDIO_DIR = "/tmp"  # Could be made configurable
 
 # ============================================================================
-# PERFORMANCE TUNING
+# Performance Tuning
 # ============================================================================
 
 # Audio Processing
 AUDIO_FRAME_MS = 100  # milliseconds per audio frame for processing 
-
-# ============================================================================
-# PHONETIC ALPHABET for APRS messages
-# ============================================================================
-
-PHONETIC_ALPHABET = {
-  "A": "Alpha",
-  "B": "Bravo",
-  "C": "Charlie",
-  "D": "Delta",
-  "E": "Echo",
-  "F": "Foxtrot",
-  "G": "Golf",
-  "H": "Hotel",
-  "I": "India",
-  "J": "Juliett",
-  "K": "Kilo",
-  "L": "Lima",
-  "M": "Mike",
-  "N": "November",
-  "O": "Oscar",
-  "P": "Papa",
-  "Q": "Quebec",
-  "R": "Romeo",
-  "S": "Sierra",
-  "T": "Tango",
-  "U": "Uniform",
-  "V": "Victor",
-  "W": "Whiskey",
-  "X": "X-ray",
-  "Y": "Yankee",
-  "Z": "Zulu",
-  "0": "Zero",
-  "1": "One",
-  "2": "Two",
-  "3": "Three",
-  "4": "Four",
-  "5": "Five",
-  "6": "Six",
-  "7": "Seven",
-  "8": "Eight",
-  "9": "Nine",
-  "-": "Dash",
-  "/": "Stroke"
-}
