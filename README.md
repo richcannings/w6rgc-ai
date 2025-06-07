@@ -91,7 +91,7 @@ W6RGC/AI offers a range of features leveraging various AI technologies:
 
 Voice APRS demonstrates the natural language APRS capabilities of W6RGC/AI, allowing operators to send and receive APRS messages using conversational voice commands.
 
-[![Voice APRS Demo](img/voice_aprs_demo.png)](https://www.youtube.com/watch?v=f69otUIe1ko)
+[![Voice APRS Demo](https://i.ytimg.com/vi/f69otUIe1ko/hqdefault.jpg)](https://www.youtube.com/watch?v=f69otUIe1ko)
 
 **[📺 Watch the Voice APRS Demo Video](https://www.youtube.com/watch?v=f69otUIe1ko)**
 
