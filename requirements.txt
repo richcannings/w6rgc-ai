@@ -12,3 +12,4 @@ torch
 librosa
 google-generativeai
 beautifulsoup4
+pytz

@@ -52,6 +52,7 @@ from constants import (
 )
 from aprs_helper import get_aprs_messages, send_aprs_message
 from weather_helper import get_weather_forecast
+from time_helper import get_timezone_time
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -179,11 +180,33 @@ get_weather_forecast_func = FunctionDeclaration(
     }
 )
 
+# Define the time zone tool
+get_timezone_time_func = FunctionDeclaration(
+    name="get_timezone_time",
+    description=(
+        "Gets current time and date for a specified timezone. "
+        "Use this when the operator asks about time, what time it is, or time in a specific location. "
+        "If no timezone is specified, defaults to Pacific Time. Supports natural language timezone inputs "
+        "like 'Eastern', 'New York', 'London', 'UTC', etc. Returns time without seconds and year."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "timezone": {
+                "type": "string",
+                "description": "The timezone for time information (e.g., 'Eastern', 'Pacific', 'New York', 'London', 'UTC'). Optional - defaults to Pacific Time if not specified."
+            }
+        },
+        "required": []  # timezone is optional, defaults to Pacific
+    }
+)
+
 # Create the tool with all function declarations
 aprs_tool = Tool(function_declarations=[
     get_operator_aprs_messages_func, 
     send_aprs_message_func,
-    get_weather_forecast_func
+    get_weather_forecast_func,
+    get_timezone_time_func
 ])
 
 def ask_gemini(prompt: str, model_name: Optional[str] = None, 
@@ -333,6 +356,29 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                     except Exception as e:
                         print(f"❌ Error calling get_weather_forecast for {location}: {e}")
                         return f"An error occurred while trying to get weather information for {location}: {str(e)}"
+                
+                elif fc.name == "get_timezone_time":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    timezone = fc.args.get("timezone")
+                    
+                    # timezone is optional - if not provided, defaults to Pacific Time
+                    try:
+                        if timezone:
+                            print(f"🕒 Calling time_helper.get_timezone_time for timezone: {timezone}")
+                        else:
+                            print(f"🕒 Calling time_helper.get_timezone_time with default timezone (Pacific)")
+                        
+                        time_info = get_timezone_time(timezone)
+                        display_tz = timezone if timezone else "default (Pacific Time)"
+                        print(f"🕒 Time information received for {display_tz}: {time_info[:100]}...") # Log snippet
+                        
+                        return f"TTS_DIRECT:{time_info}"
+                        
+                    except Exception as e:
+                        display_tz = timezone if timezone else "default timezone"
+                        print(f"❌ Error calling get_timezone_time for {display_tz}: {e}")
+                        return f"An error occurred while trying to get time information for {display_tz}: {str(e)}"
             
             # If no function call was made, or it wasn't the one we handle, proceed with normal text response
             if hasattr(response, 'text') and response.text:

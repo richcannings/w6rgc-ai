@@ -34,6 +34,7 @@ W6RGC/AI offers a range of features leveraging various AI technologies:
 **Function-Based Features:**
 *   **VoiceAPRS:** Send and receive APRS messages using natural language voice commands (requires internet).
 *   **Weather Information:** Get current weather and 3-day forecasts for any location using natural language voice commands (requires internet and OpenWeatherMap API key).
+*   **Time Zone Information:** Get current time and date for any timezone using natural language voice commands (defaults to Pacific Time if no timezone specified).
 *   **Basic Voice Commands:** Regex-based commands for "status," "exit," "reset," and "identify."
 
 **Core Technical Features:**
@@ -180,7 +181,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
 
 Your radio is the main interface for input and output. The application will start and listen for the configured wake word (default: "Seven"). To interact, say the wake word at the start of your transmission once or twice, followed by your command or query speaking as how you would speak with another operator.
 
-Example: "Seven, what are your commands?", "Seven, start a net. You are Net Control Station." or "Seven, send an APRS message."
+Example: "Seven, what are your commands?", "Seven, start a net. You are Net Control Station.", "Seven, send an APRS message.", or "Seven, what time is it in Eastern?"
 
 To terminate the assistant: "Seven, break" or "Seven, exit" or use Ctrl+C in the terminal.
 
@@ -308,6 +309,23 @@ The system provides comprehensive weather information through natural language v
 - "Seven, can you give me the 3-day forecast for Chicago?"
 - "Seven, what are the weather conditions in London, England?"
 
+### Time Zone Information (Function Calling)
+The system provides current time and date information for any timezone through natural language voice commands:
+
+- **Current Time**: "Seven, what time is it?" (defaults to Pacific Time)
+- **Specific Timezone**: "Seven, what time is it in Eastern?" or "Seven, what time is it in New York?"
+- **International Time**: "Seven, what time is it in London?" or "Seven, what time is it in Tokyo?"
+- **UTC/GMT Time**: "Seven, what's the current UTC time?"
+- **Format**: Time is displayed in 12-hour format without seconds, date without year
+- **Default**: Automatically defaults to Pacific Time if no timezone is specified
+
+**Example Voice Commands:**
+- "Seven, what time is it right now?"
+- "Seven, what time is it in Eastern time?"
+- "Seven, can you tell me the time in London?"
+- "Seven, what's the current UTC time?"
+- "Seven, what time is it in Tokyo?"
+
 ### Carrier Sense
 Both AIOC and Digirig interfaces include carrier sense functionality:
 - Checks for channel activity before transmitting
@@ -383,6 +401,8 @@ python periodically_identify.py       # Test periodic identification
 python list_gemini_models.py          # List available Gemini models and test API access
 python weather_helper.py              # Test weather API functionality
 python test_weather_integration.py    # Test weather integration with Gemini
+python time_helper.py                 # Test time zone functionality
+python test_time_integration.py       # Test time zone integration with Gemini
 ```
 
 ## License
