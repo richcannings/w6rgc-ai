@@ -32,6 +32,7 @@ W6RGC/AI offers a range of features leveraging various AI technologies:
 
 **Function-Based Features:**
 *   **VoiceAPRS:** Send and receive APRS messages using natural language voice commands (requires internet).
+*   **Weather Information:** Get current weather and 3-day forecasts for any location using natural language voice commands (requires internet and OpenWeatherMap API key).
 *   **Basic Voice Commands:** Regex-based commands for "status," "exit," "reset," and "identify."
 
 **Core Technical Features:**
@@ -212,6 +213,9 @@ DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash-preview-05-20" # Example: "gemin
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
+
+# Weather API Configuration (for weather function calling)
+WEATHER_API_KEY_FILE = "weather_api_key.txt"  # Store your OpenWeatherMap API key here
 ```
 
 ### Wake Word Detection
@@ -289,6 +293,20 @@ The system includes natural language APRS functionality through Gemini's functio
 - **Integration**: Uses findu.com for APRS operations
 - **Requirements**: Internet connection and Gemini API access
 
+### Weather Information (Function Calling)
+The system provides comprehensive weather information through natural language voice commands:
+
+- **Current Weather**: "Seven, what's the weather like in San Francisco?"
+- **3-Day Forecast**: "Seven, give me the weather forecast for New York"
+- **Detailed Information**: Includes temperature, conditions, humidity, highs/lows, and precipitation probability
+- **Integration**: Uses OpenWeatherMap API for reliable weather data
+- **Requirements**: Internet connection, Gemini API access, and OpenWeatherMap API key in `weather_api_key.txt`
+
+**Example Voice Commands:**
+- "Seven, what's the weather like in Los Angeles, California?"
+- "Seven, can you give me the 3-day forecast for Chicago?"
+- "Seven, what are the weather conditions in London, England?"
+
 ### Carrier Sense
 Both AIOC and Digirig interfaces include carrier sense functionality:
 - Checks for channel activity before transmitting
@@ -325,6 +343,12 @@ Automatic station identification every 10 minutes (configurable):
 - **Gemini**: Check API key in `gemini_api_key.txt`
 - **Models**: Verify model availability: `ollama list` or test with `python list_gemini_models.py`
 
+**Weather Service Issues:**
+- **API Key**: Ensure valid OpenWeatherMap API key in `weather_api_key.txt`
+- **Internet**: Weather service requires internet connection
+- **Test**: Run `python weather_helper.py` to test weather functionality
+- **API Limits**: Free tier has usage limits; check your OpenWeatherMap dashboard
+
 Enable debug output for wake word detection:
 ```python
 # In wake_word_detector.py, set debug=True when calling listen_for_wake_word
@@ -350,12 +374,14 @@ The project includes several testing utilities:
 
 To test individual components:
 ```bash
-python ril_aioc.py                # Test AIOC hardware interface
-python ril_digirig.py             # Test Digirig hardware interface
-python wake_word_detector.py      # Test wake word detection
-python regex_command_tooling.py   # Test command identification
-python periodically_identify.py   # Test periodic identification
-python list_gemini_models.py      # List available Gemini models and test API access
+python ril_aioc.py                    # Test AIOC hardware interface
+python ril_digirig.py                 # Test Digirig hardware interface
+python wake_word_detector.py          # Test wake word detection
+python regex_command_tooling.py       # Test command identification
+python periodically_identify.py       # Test periodic identification
+python list_gemini_models.py          # List available Gemini models and test API access
+python weather_helper.py              # Test weather API functionality
+python test_weather_integration.py    # Test weather integration with Gemini
 ```
 
 ## License

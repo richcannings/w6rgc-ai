@@ -51,6 +51,7 @@ from constants import (
     BOT_CALLSIGN
 )
 from aprs_helper import get_aprs_messages, send_aprs_message
+from weather_helper import get_weather_forecast
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -125,7 +126,6 @@ get_operator_aprs_messages_func = FunctionDeclaration(
         "required": ["operator_callsign"]
     }
 )
-aprs_tool = Tool(function_declarations=[get_operator_aprs_messages_func])
 
 # Define the APRS send message tool
 send_aprs_message_func = FunctionDeclaration(
@@ -156,14 +156,35 @@ send_aprs_message_func = FunctionDeclaration(
         "required": ["sender_callsign", "recipient_callsign", "message_text"]
     }
 )
-# Add the new send function to the existing aprs_tool
-# This assumes aprs_tool is already defined with get_operator_aprs_messages_func
-# If aprs_tool might not be defined, it should be initialized here.
-# For simplicity, assuming aprs_tool = Tool(...) was already called.
-#if aprs_tool and hasattr(aprs_tool, 'function_declarations'):
-#    aprs_tool.function_declarations.append(send_aprs_message_func)
-#else: # Initialize if it wasn't (e.g. if a previous definition was removed)
-aprs_tool = Tool(function_declarations=[get_operator_aprs_messages_func, send_aprs_message_func])
+
+# Define the weather tool
+get_weather_forecast_func = FunctionDeclaration(
+    name="get_weather_forecast",
+    description=(
+        "Gets current weather conditions and 3-day forecast for a specified location. "
+        "Use this when the operator asks about weather, forecast, or weather conditions. "
+        "Includes current temperature, conditions, humidity, and 3-day forecast with highs, lows, "
+        "sky conditions, and chance of rain. If no location is specified by the operator, "
+        "ask them to provide a location (city, state or city, country)."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "The location for weather information (e.g., 'San Francisco, CA', 'New York', 'London, UK')."
+            }
+        },
+        "required": ["location"]
+    }
+)
+
+# Create the tool with all function declarations
+aprs_tool = Tool(function_declarations=[
+    get_operator_aprs_messages_func, 
+    send_aprs_message_func,
+    get_weather_forecast_func
+])
 
 def ask_gemini(prompt: str, model_name: Optional[str] = None, 
                generation_config: Optional[Dict[str, Any]] = None) -> str:
@@ -293,6 +314,25 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                     except Exception as e:
                         print(f"❌ Error calling send_aprs_message from {sender_callsign} to {recipient_callsign}: {e}")
                         return f"An error occurred while trying to send the APRS message from {sender_callsign} to {recipient_callsign}: {str(e)}"
+                
+                elif fc.name == "get_weather_forecast":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    location = fc.args.get("location")
+
+                    if not location:
+                        return "I need a location to get weather information. Please tell me what city or area you'd like the weather for."
+
+                    try:
+                        print(f"🌤️ Calling weather_helper.get_weather_forecast for location: {location}")
+                        weather_info = get_weather_forecast(location)
+                        print(f"☀️ Weather information received for {location}: {weather_info[:100]}...") # Log snippet
+                        
+                        return f"TTS_DIRECT:{weather_info}"
+                        
+                    except Exception as e:
+                        print(f"❌ Error calling get_weather_forecast for {location}: {e}")
+                        return f"An error occurred while trying to get weather information for {location}: {str(e)}"
             
             # If no function call was made, or it wasn't the one we handle, proceed with normal text response
             if hasattr(response, 'text') and response.text:
