@@ -21,47 +21,6 @@ Offline mode allows to run this as an AI backup system, for the day when AI beco
 
 Works with the [Digirig](https://digirig.net/) and [AIOC](https://github.com/skuep/AIOC) ham radio adapters.
 
-## Design
-
-W6RGC/AI explores and leverages the following AI models in concert:
-
-1.  **AI based wake word spotting** 
-    - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2)
-    -   Listens for "Seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal))
-    -   You can choose from over 35 not-so-good options
-2.  **AI based speech-to-text**
-    - Uses [OpenAI Whisper](https://github.com/openai/whisper) speech recognition
-3.  **Modular LLMs for the brains of the operation** 
-    - The current default uses online [Gemini](https://gemini.google.com/) "[gemini-2.5-flash-preview-05-20](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash)" and requires a developer key
-    - A one line change (`HAS_INTERNET`) switches to offline [Ollama](https://ollama.com/) model, like "[gemma3:12b](https://ollama.com/bsahane/gemma3:12b)"
-    - Plug in your own models and prompts!
-4.  **Ham radio prompts**. Example prompts for:
-    - Performing QSOs
-    - Running nets
-    - Copying FEMA ICS-213 forms
-5.  **AI based tooling and function calling**
-    - Uses [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
-    - Example: "Voice APRS" sends and receive APRS messages using Natural Language Understanding.
-    - A regular expression based system is available too 
-6.  **AI based text-to-speech** using [CoquiTTS](https://github.com/coqui-ai/TTS) to give the bot a voice
-
-The code is designed for modularity, making it easy to swap and compare AI models, prompts, and function calling. The system is organized into several key modules:
-
-- **`main.py`**: Main application entry point and orchestration
-- **`constants.py`**: Centralized configuration management for all settings
-- **`regex_command_tooling.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
-- **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
-- **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware management
-- **`context_manager.py`**: AI persona and conversation context management 
-- **`wake_word_detector.py`**: AST-based wake word detection system
-- **`periodically_identify.py`**: Handles periodic station identification
-- **`aprs_helper.py`**: APRS message sending/receiving via findu.com
-- **`speech_recognition.py`**: Whisper-based speech-to-text processing
-- **`llm_gemini_online.py`**: Google Gemini API integration with function calling
-- **`llm_ollama_offline.py`**: Local Ollama LLM integration for offline operation
-
-![Architecture Diagram](img/architecture.jpg)
-
 ## Features
 
 W6RGC/AI offers a range of features leveraging various AI technologies:
@@ -107,7 +66,46 @@ Voice APRS demonstrates the natural language APRS capabilities of W6RGC/AI, allo
 - Supports both sending and receiving messages
 - Phonetic readback of callsigns and messages
 
+## Design
 
+W6RGC/AI explores and leverages the following AI models in concert:
+
+1.  **AI based wake word spotting** 
+    - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2)
+    -   Listens for "Seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal))
+    -   You can choose from over 35 not-so-good options
+2.  **AI based speech-to-text**
+    - Uses [OpenAI Whisper](https://github.com/openai/whisper) speech recognition
+3.  **Modular LLMs for the brains of the operation** 
+    - The current default uses online [Gemini](https://gemini.google.com/) "[gemini-2.5-flash-preview-05-20](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash)" and requires a developer key
+    - A one line change (`HAS_INTERNET`) switches to offline [Ollama](https://ollama.com/) model, like "[gemma3:12b](https://ollama.com/bsahane/gemma3:12b)"
+    - Plug in your own models and prompts!
+4.  **Ham radio prompts**. Example prompts for:
+    - Performing QSOs
+    - Running nets
+    - Copying FEMA ICS-213 forms
+5.  **AI based tooling and function calling**
+    - Uses [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
+    - Example: "Voice APRS" sends and receive APRS messages using Natural Language Understanding.
+    - A regular expression based system is available too 
+6.  **AI based text-to-speech** using [CoquiTTS](https://github.com/coqui-ai/TTS) to give the bot a voice
+
+![Architecture Diagram](img/architecture.jpg)
+
+The code is designed for modularity, making it easy to swap and compare AI models, prompts, and function calling. The system is organized into several key modules:
+
+- **`main.py`**: Main application entry point and orchestration
+- **`constants.py`**: Centralized configuration management for all settings
+- **`regex_command_tooling.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
+- **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
+- **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware management
+- **`context_manager.py`**: AI persona and conversation context management 
+- **`wake_word_detector.py`**: AST-based wake word detection system
+- **`periodically_identify.py`**: Handles periodic station identification
+- **`aprs_helper.py`**: APRS message sending/receiving via findu.com
+- **`speech_recognition.py`**: Whisper-based speech-to-text processing
+- **`llm_gemini_online.py`**: Google Gemini API integration with function calling
+- **`llm_ollama_offline.py`**: Local Ollama LLM integration for offline operation
 
 ## Setup and Installation
 
@@ -180,7 +178,7 @@ Voice APRS demonstrates the natural language APRS capabilities of W6RGC/AI, allo
 
 Your radio is the main interface for input and output. The application will start and listen for the configured wake word (default: "Seven"). To interact, say the wake word at the start of your transmission once or twice, followed by your command or query speaking as how you would speak with another operator.
 
-Example: "Seven, what is the current UTC time?" or "Seven, send an APRS message."
+Example: "Seven, what are your commands?", "Seven, start a net. You are Net Control Station." or "Seven, send an APRS message."
 
 To terminate the assistant: "Seven, break" or "Seven, exit" or use Ctrl+C in the terminal.
 
@@ -189,11 +187,11 @@ To terminate the assistant: "Seven, break" or "Seven, exit" or use Ctrl+C in the
 The system uses MIT's AST (Audio Spectrogram Transformer) model for efficient wake word detection:
 
 - **35+ Available Wake Words:** backward, bed, bird, cat, dog, down, eight, five, follow, forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
-- **Current Default:** "seven" (optimized for ham radio use)
+- **Current Default:** "seven" (I couldn't say "sheila" or "marvin" over and over again.)
 - **High Performance:** Very fast, low CPU usage, high accuracy
-- **CUDA Support:** GPU acceleration when available
+- **CUDA Support:** GPU acceleration is required
 
-To change the wake word, modify `DEFAULT_WAKE_WORD` in `constants.py` to any of the supported words.
+To change the wake word, modify `BOT_NAME` or`DEFAULT_WAKE_WORD`in `constants.py` to any of the supported words. It's seems easier for the used and AI when `BOT_NAME` equals `DEFAULT_WAKE_WORD`.
 
 ## Configuration
 
