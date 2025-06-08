@@ -15,6 +15,7 @@ Prompt based features include:
 
 Function based features include:
 *   Voice-based [APRS](https://www.aprs.org/): Natural language APRS message sending/receiving
+*   Voice based weather reporting by location, using [OpenWeatherMap](https://openweathermap.org/). (Requires free API key)
 *   Basic voice commands using regular expressions, like "status", "exit", "identify".
 
 Offline mode allows to run this as an AI backup system, for the day when AI becomes as a necessity as electricity and communication.
