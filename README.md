@@ -2,24 +2,41 @@
 
 ## Overview
 
-AI is changing everything. Operator: Are you ready?
+AI is changing everything. Operator: [7?](https://en.wikipedia.org/wiki/Wire_signal) Are you ready? 7?
 
-W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant, and runs an assortment of online and fully offline models.
+W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant chat bot and runs an assortment of online and fully offline ("off grid") AI models.
 
-Your ham radio is the user interface. When on the air, activate W6RGC/AI by saying the wake word (like "Seven") at the start of every transmission, and then tell "Seven" what you need or ask what it does.
+**Your ham radio is the user interface.**
 
-Prompt based features include:
+When on the air, activate W6RGC/AI by saying "Seven" at the start of every transmission, and then talk to Seven normally, like asking what its capable of. The experience is similar to Siri, Google Assistant, or Alexa.
+
+**The models learn anything.**
+
+Update the prompts to your needs. The default prompt trains the bot to:
 *   Perform QSOs (exchange call sign, name, location, and signal report with confirmation)
 *   Run simple nets (handle corrections, maintain list, count)
-*   [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing and recording
+*   Transcribe and confirm [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing
+*   Adhere to amateur radio [FCC Part 97](https://www.arrl.org/files/file/Regulatory/Part%2097%20-%20%2016%20Jan%202024.pdf) rules and regulations.
+
+Imagine the possibilities, like support your EOC as the emergency AI backup and being the AI operator. With just copy and paste, one could make this an FEMA DWS/ARES expert by training the bot on all FEMA, ARES, and county documentation available.
+
+**The models act on your behalf.**
+
+Often called Tooling or Function Calling, the AI chatbot can access the internet when available and perform other actions.
 
 Function based features include:
-*   Voice-based [APRS](https://www.aprs.org/): Natural language APRS message sending/receiving
-*   Voice based weather reporting by location, using [OpenWeatherMap](https://openweathermap.org/). (Requires free API key)
-*   Voice based time and date checking. Works with time zones.
-*   Basic voice commands using regular expressions, like "status", "exit", "identify".
+*   Voice-based [APRS](https://www.aprs.org/): Natural language APRS message sending/receiving (online only)
+*   Voice based weather reporting by location, using [OpenWeatherMap](https://openweathermap.org/). (online only, requires free API key)
+*   Voice based time and date checking. Works with time zones. (online and offline)
+*   Basic voice commands using regular expressions, like "status", "exit", "identify". (online and offline)
 
-Offline mode allows to run this as an AI backup system, for the day when AI becomes as a necessity as electricity and communication.
+Future versions will include AI rig, computer control, and features based on that, like offline voice APRS.
+
+**The system is designed for you to start tinkering now.**
+
+One can change any of the AI models, update the prompts, and there is enough source code precedent to easily vibe code more functions.
+
+Offline mode allows you to run this as an AI backup system, for the day when AI becomes as a necessity as electricity and communication.
 
 Works with the [Digirig](https://digirig.net/) and [AIOC](https://github.com/skuep/AIOC) ham radio adapters.
 
