@@ -302,7 +302,7 @@ print("=" * 50)
 
 while True:
     try:
-        # Step #0: Listen for carrier signal. This needs to be a clear transtion from no transmission to a
+        # STEP #0: Listen for carrier signal. This needs to be a clear transtion from no transmission to a
         # transmission.
         print("🎤 Standing by for transmission. Waiting...")
         
@@ -320,7 +320,7 @@ while True:
             # print("❌ Transmission not detected. Restarting loop.")
             continue
 
-        # Step 1: Wait for wake word detection
+        # STEP 1: Wait for wake word detection
         # TODO(richc): Consider starting to record the audio WHILE listening for the wake word.
         print(f"🎤 Transmission detected. Listening for wake word '{DEFAULT_WAKE_WORD}'...")
         # AST detector listens and returns when the wake word was detected
@@ -338,11 +338,11 @@ while True:
         # TODO(richc): Kick off a thread to play notification audio clip to notify the user that 
         #              the bot got the message.
 
-        # Step 2: Transcribe the audio to text
+        # STEP 2: Transcribe the audio to text
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
         operator_text = speech_recognition_engine.get_full_command_after_wake_word()
         
-        # Step 3: Process the operator's input (Assumes the wake word is the same as the bots name.)
+        # STEP 3: Process the operator's input (Assumes the wake word is the same as the bots name.)
 
         # This is a hack to get the wake word detector to pass the name of the bot, so the bot
         # receives the entire transmission. This may or may not be valuable.
@@ -381,15 +381,8 @@ while True:
             play_tts_audio("My context has been reset. I am ready for a new conversation.", 
                            coqui_tts_engine, ril)
             continue
-        # TODO(richc): Remove? The bot identifies itself when it is asked to do so.
-        #elif command_type == "identify":
-        #    print("🆔 Identify command identified by main.py.")
-        #    identify_response = f"This is {BOT_PHONETIC_CALLSIGN}."
-        #    play_tts_audio(identify_response, coqui_tts_engine, ril)
-        #    periodic_identifier.restart_timer
-        #    continue
         else:
-            # Step 4: If no command was handled, proceed with conversation between the operator and the bot
+            # STEP 4: If no command was handled, proceed with conversation between the operator and the bot
             print(f"💬 Conversation request detected")
             
             # Add the operator's request to the context
@@ -407,6 +400,7 @@ while True:
                 if ai_response.startswith("TTS_DIRECT:"):
                     tts_message = ai_response.replace("TTS_DIRECT:", "", 1)
                     print(f"🔊 APRS - Speaking directly: {tts_message[:100]}...")
+                    context_mgr.add_ai_response_to_context(tts_message) # Add tooling responses to script/context
                     ril.reset_audio_device()
                     play_tts_audio_fast(tts_message, coqui_tts_engine, ril)
                     # Optionally, add to context or decide if this interaction ends here
