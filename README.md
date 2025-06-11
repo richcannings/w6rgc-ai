@@ -6,11 +6,11 @@ AI is changing everything. Operator: [7?](https://en.wikipedia.org/wiki/Wire_sig
 
 W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant chat bot and runs an assortment of online and fully offline ("off grid") AI models.
 
-**Your ham radio is the user interface.**
+**Your ham radio is the user interface**
 
 When on the air, activate W6RGC/AI by saying "Seven" at the start of every transmission, and then talk to Seven normally, like asking what its capable of. The experience is similar to Siri, Google Assistant, or Alexa.
 
-**The models learn anything.**
+**The models learn anything**
 
 Update the prompts to your needs. The default prompt trains the bot to:
 *   Perform QSOs (exchange call sign, name, location, and signal report with confirmation)
@@ -18,9 +18,9 @@ Update the prompts to your needs. The default prompt trains the bot to:
 *   Transcribe and confirm [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing
 *   Adhere to amateur radio [FCC Part 97](https://www.arrl.org/files/file/Regulatory/Part%2097%20-%20%2016%20Jan%202024.pdf) rules and regulations.
 
-Imagine the possibilities, like support your EOC as the emergency AI backup and being the AI operator. With just copy and paste, one could make this an FEMA DWS/ARES expert by training the bot on all FEMA, ARES, and county documentation available.
+One idea: Create a FEMA/ARES/EOC expert by training the bot on all FEMA, ARES, and county documentation available.
 
-**The models act on your behalf.**
+**The models act on your behalf**
 
 Often called Tooling or Function Calling, the AI chatbot can access the internet when available and perform other actions.
 
@@ -32,9 +32,9 @@ Function based features include:
 
 Future versions will include AI rig, computer control, and features based on that, like offline voice APRS.
 
-**The system is designed for you to start tinkering now.**
+**Built to start tinkering now**
 
-One can change any of the AI models, update the prompts, and there is enough source code precedent to easily vibe code more functions.
+Its modular by design. One can change any of the AI models, update the prompts, and there is enough source code precedent to easily vibe code more functions.
 
 Offline mode allows you to run this as an AI backup system, for the day when AI becomes as a necessity as electricity and communication.
 

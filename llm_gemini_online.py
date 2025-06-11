@@ -294,9 +294,8 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                         # Execute the actual function with the operator's callsign
                         print(f"📞 Calling aprs_helper.get_aprs_messages for callsign: {operator_callsign}")
                         aprs_messages_text = get_aprs_messages(receiver=operator_callsign)
-                        # TODO(richc): Add to promt context, but ContextManager avalable here. Pass it in initialize_gemini()?
+                        # TODO(richc): Add to prompt context, but ContextManager avalable here. Pass it in initialize_gemini()?
                         print(f"✉️ APRS messages received for {operator_callsign}: {aprs_messages_text[:100]}...") # Log snippet
-                        
                         if not aprs_messages_text or aprs_messages_text.strip() == "No messages found.":
                              return f"No new APRS messages found for {operator_callsign}."
                         return f"TTS_DIRECT:Messages: {aprs_messages_text}"
