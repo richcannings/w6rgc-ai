@@ -110,7 +110,7 @@ class RadioInterfaceLayerAIOC:
             raise RuntimeError(f"Failed to initialize PTT on {port_name}. Radio control will not be possible.") from e
 
 
-    def _check_carrier_sense(self, duration=CARRIER_SENSE_DURATION):
+    def check_carrier_sense(self, duration=CARRIER_SENSE_DURATION):
         """
         Checks for audio input (carrier) on the radio frequency.
         Returns True if carrier is detected, False if frequency is clear.

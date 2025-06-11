@@ -18,7 +18,7 @@ Update the prompts to your needs. The default prompt trains the bot to:
 *   Transcribe and confirm [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing
 *   Adhere to amateur radio [FCC Part 97](https://www.arrl.org/files/file/Regulatory/Part%2097%20-%20%2016%20Jan%202024.pdf) rules and regulations.
 
-One idea: Create a FEMA/ARES/EOC expert by training the bot on all FEMA, ARES, and county documentation available.
+Why not create a FEMA/ARES/EOC expert by training the bot on all FEMA, ARES, and county documentation available.
 
 **The models act on your behalf**
 

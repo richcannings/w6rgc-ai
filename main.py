@@ -261,8 +261,7 @@ except Exception as e:
     print(f"❌ CRITICAL: Failed to initialize the primary TTS model ({TTS_MODEL_TACOTRON2}): {e}")
     print("TTS will not be available. Exiting.")
     exit()
-        
-# Configure TTS for speed over quality
+# Configure CoquiTTS for speed over quality
 if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthesizer, 'tts_config'):
     # Try to set faster inference settings
     try:
@@ -303,20 +302,41 @@ print("=" * 50)
 
 while True:
     try:
-        # Step 1: Wait for wake word detection
-        print(f"\n🎤 Listening for wake word '{DEFAULT_WAKE_WORD}'...")
+        # Step #0: Listen for carrier signal. This needs to be a clear transtion from no transmission to a
+        # transmission.
+        print("🎤 Standing by for transmission. Waiting...")
         
+        # Don't start if someone is currently transmitting. If there is a transmission, start the main loop over.
+        transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
+        if transmission_detected:
+            # print("🎤 Transmission detected. Restarting main loop.")
+            continue
+
+        # Now wait for the transmission to start.
+        while not transmission_detected:  # This is the main wait loop for carrier detection. 
+            time.sleep(0.2) # This delay is a guess. best to keep it short.
+            transmission_detected = ril.check_carrier_sense(duration=0.1)
+        if not transmission_detected:
+            # print("❌ Transmission not detected. Restarting loop.")
+            continue
+
+        # Step 1: Wait for wake word detection
+        # TODO(richc): Consider starting to record the audio WHILE listening for the wake word.
+        print(f"🎤 Transmission detected. Listening for wake word '{DEFAULT_WAKE_WORD}'...")
         # AST detector listens and returns when the wake word was detected
         wake_detected = wake_detector.listen_for_wake_word(
             audio_device_index=audio_index,
+            duration=5, # Listen for 5 seconds for the wake word 
             debug=False
         )
         
         if not wake_detected:
-            print("❌ Wake word not detected, continuing to listen...")
+            print("❌ Wake word not detected. Restarting loop.")
             continue
-            
-        # TODO(rich): Kick off a thread to play notification audio clip to notify the user that the bot got the message.
+
+        # Step 2a: Transmit a tone, notifying the operator that the chatbot copied their messsage.
+        # TODO(richc): Kick off a thread to play notification audio clip to notify the user that 
+        #              the bot got the message.
 
         # Step 2: Transcribe the audio to text
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")

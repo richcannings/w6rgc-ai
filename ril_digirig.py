@@ -121,7 +121,7 @@ class RadioInterfaceLayerDigiRig:
             # For now, re-raising to indicate a critical setup failure.
             raise RuntimeError(f"Failed to initialize PTT on {port_name}. Radio control will not be possible.") from e
 
-    def _check_carrier_sense(self, duration=CARRIER_SENSE_DURATION):
+    def check_carrier_sense(self, duration=CARRIER_SENSE_DURATION):
         """
         Checks for audio input (carrier) on the radio frequency.
         Returns True if carrier is detected, False if frequency is clear.
@@ -134,7 +134,7 @@ class RadioInterfaceLayerDigiRig:
             return False
             
         try:
-            print(f"📡 Checking carrier sense for {duration}s...")
+            # print(f"📡 Checking carrier sense for {duration}s...")
             
             # Get stream parameters
             stream_params = self.get_input_stream_params()
@@ -153,7 +153,7 @@ class RadioInterfaceLayerDigiRig:
                         print(f"📡 Carrier detected (amplitude: {amplitude:.4f})")
                         return True
                         
-            print("📡 Frequency clear")
+            # print("📡 Frequency clear")
             return False
             
         except Exception as e:
@@ -176,7 +176,7 @@ class RadioInterfaceLayerDigiRig:
             
         # Carrier sense loop
         for attempt in range(max_retries):
-            if not self._check_carrier_sense():
+            if not self.check_carrier_sense():
                 # Frequency is clear, proceed with PTT
                 try:
                     self.serial_conn.setRTS(True)

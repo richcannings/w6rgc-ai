@@ -113,16 +113,23 @@ class ASTWakeWordDetector:
         
         print(f"✓ Wake word '{self.wake_word}' found in model vocabulary")
     
-    def listen_for_wake_word(self, audio_device_index: int, debug: bool = False) -> bool:
+    def listen_for_wake_word(self, audio_device_index: int, debug: bool = False, duration: Optional[float] = None) -> bool:
         """
-        Listen continuously for the wake word.
-        Returns True when wake word is detected.
+        Listen for the wake word. If duration is provided, it will only listen for that many seconds.
         
         Args:
             audio_device_index: Audio device to use for recording
             debug: Print classification results for debugging
+            duration: Optional duration in seconds to listen for. If None, listens indefinitely.
+            
+        Returns:
+            True if wake word is detected, False if timeout or error.
         """
-        print(f"🎤 Listening for wake word '{self.wake_word}'...")
+        if duration:
+            print(f"🎤 Listening for wake word '{self.wake_word}' for {duration} seconds...")
+        else:
+            print(f"🎤 Listening for wake word '{self.wake_word}'...")
+
         if debug:
             print("Debug mode: showing all predictions")
             print(f"Model expects {self.model_sample_rate}Hz, device uses {self.device_sample_rate}Hz")
@@ -130,11 +137,17 @@ class ASTWakeWordDetector:
         # Calculate chunk size for device sample rate
         chunk_samples = int(self.chunk_length_s * self.device_sample_rate)
         
+        start_time = time.time()
+        
         try:
             with sd.InputStream(samplerate=self.device_sample_rate, channels=1, 
                               device=audio_device_index, dtype='float32') as stream:
                 
                 while True:
+                    if duration and (time.time() - start_time) > duration:
+                        print(f"⌛ Timeout: Did not detect '{self.wake_word}' within {duration} seconds.")
+                        return False
+
                     # Read audio chunk
                     audio_chunk, _ = stream.read(chunk_samples)
                     audio_chunk = np.squeeze(audio_chunk)
