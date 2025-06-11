@@ -304,21 +304,26 @@ while True:
     try:
         # STEP #0: Listen for carrier signal. This needs to be a clear transtion from no transmission to a
         # transmission.
-        print("🎤 Standing by for transmission. Waiting...")
-        
-        # Don't start if someone is currently transmitting. If there is a transmission, start the main loop over.
-        transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
-        if transmission_detected:
-            # print("🎤 Transmission detected. Restarting main loop.")
-            continue
-
-        # Now wait for the transmission to start.
-        while not transmission_detected:  # This is the main wait loop for carrier detection. 
-            time.sleep(0.2) # This delay is a guess. best to keep it short.
-            transmission_detected = ril.check_carrier_sense(duration=0.1)
-        if not transmission_detected:
-            # print("❌ Transmission not detected. Restarting loop.")
-            continue
+        check_carrier_sense_before_listening = True
+        if check_carrier_sense_before_listening:
+            print("🎤 Standing by for transmission. Waiting...")
+            transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
+            if transmission_detected:
+                print("🎤 Transmission detected. Restarting main loop.")
+                continue
+            print("🎤 Standing by for transmission. Waiting...")
+            # Don't start if someone is currently transmitting. If there is a transmission, start the main loop over.
+            transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
+            if transmission_detected:
+                # print("🎤 Transmission detected. Restarting main loop.")
+                continue
+            # Now wait for the transmission to start.
+            while not transmission_detected:  # This is the MAIN WAIT LOOP for carrier detection. 
+                time.sleep(0.2) # This delay is a guess. best to keep it short.
+                transmission_detected = ril.check_carrier_sense(duration=0.1)
+            if not transmission_detected:
+                # print("❌ Transmission not detected. Restarting loop.")
+                continue
 
         # STEP 1: Wait for wake word detection
         # TODO(richc): Consider starting to record the audio WHILE listening for the wake word.
@@ -403,9 +408,6 @@ while True:
                     context_mgr.add_ai_response_to_context(tts_message) # Add tooling responses to script/context
                     ril.reset_audio_device()
                     play_tts_audio_fast(tts_message, coqui_tts_engine, ril)
-                    # Optionally, add to context or decide if this interaction ends here
-                    # For now, we'll just speak it and let the loop continue
-                    # context_mgr.add_ai_response_to_context(f"[Spoke APRS messages: {len(tts_message)} chars]")
                     periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
             else:
@@ -417,7 +419,7 @@ while True:
             # add the AI's response to the context
             context_mgr.add_ai_response_to_context(ai_response)
             
-            # Step 5: Speak response
+            # STEP 5: Speak response
             print("🔊 Speaking response...")
             ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
             play_tts_audio_fast(ai_response, coqui_tts_engine, ril)
