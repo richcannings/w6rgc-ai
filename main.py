@@ -111,7 +111,8 @@ from constants import (
     # Wake word detection
     WAKE_WORD_METHOD_AST,
     AST_MODEL_NAME,
-    DEFAULT_WAKE_WORD
+    DEFAULT_WAKE_WORD,
+    DETECT_TRANSMISSION_BEFORE_WAKE_WORD
 )
 
 ### HELPER FUNCTIONS ###
@@ -304,8 +305,7 @@ while True:
     try:
         # STEP #0: Listen for carrier signal. This needs to be a clear transtion from no transmission to a
         # transmission.
-        check_carrier_sense_before_listening = True
-        if check_carrier_sense_before_listening:
+        if DETECT_TRANSMISSION_BEFORE_WAKE_WORD:
             print("🎤 Standing by for transmission. Waiting...")
             transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
             if transmission_detected:

@@ -85,6 +85,10 @@ DEFAULT_AUDIO_CHANNELS = 1  # Mono audio
 # Wake Word Detection
 # ============================================================================
 
+# True means that the app will first listen for a transmission before listening for the wake word.
+# False means that the app will listen for the wake word immediately, even when no one is transmitting.
+DETECT_TRANSMISSION_BEFORE_WAKE_WORD = True
+
 # AST Wake Word Detection
 DEFAULT_WAKE_WORD = BOT_NAME # syncing bot name with wake word
 AST_MODEL_NAME = "MIT/ast-finetuned-speech-commands-v2"
@@ -173,3 +177,6 @@ TEMP_AUDIO_DIR = "/tmp"  # Could be made configurable
 
 # Audio Processing
 AUDIO_FRAME_MS = 100  # milliseconds per audio frame for processing 
+
+# Carrier sense before wake word detection
+DETECT_TRANSMISSION_BEFORE_WAKE_WORD = True
