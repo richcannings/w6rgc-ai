@@ -13,3 +13,4 @@ librosa
 google-generativeai
 beautifulsoup4
 pytz
+piper-tts

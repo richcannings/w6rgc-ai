@@ -159,12 +159,22 @@ def _format_message(message):
     if '@' in message:
         parts = message.split('@')
         for i in range(1, len(parts)):
-            if parts[i][0].isdigit():
-                # Add spaces between numbers
-                numbers = ' '.join(parts[i][0])
-                parts[i] = numbers + parts[i][1:]
+            if parts[i] and parts[i][0].isdigit():
+                num_str = ""
+                rest_str = parts[i]
+                for j, c in enumerate(parts[i]):
+                    if c.isdigit():
+                        num_str += c
+                    else:
+                        rest_str = parts[i][j:]
+                        break
+                else:
+                    rest_str = ""
+                
+                parts[i] = ' '.join(num_str) + rest_str
         message = '@'.join(parts)
     
+    print(f"Formatted APRS message (How does it deal with phone numbers?): {message}")
     return message
 
 def _natural_language_messages(messages):

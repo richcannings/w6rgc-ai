@@ -62,6 +62,7 @@ import numpy as np
 import time
 import gc
 from TTS.api import TTS as CoquiTTS
+from piper.voice import PiperVoice
 
 # modules part of the w6rgc/ai project
 import wake_word_detector
@@ -90,6 +91,10 @@ from constants import (
     DEFAULT_ONLINE_MODEL,
     
     # TTS configuration
+    DEFAULT_TTS_ENGINE,
+    TTS_ENGINE_COQUI,
+    TTS_ENGINE_PIPER,
+    TTS_PIPER_MODEL_PATH,
     TTS_MODEL_TACOTRON2,
     TTS_INFERENCE_NOISE_SCALE,
     TTS_INFERENCE_NOISE_SCALE_DP,
@@ -109,7 +114,69 @@ from constants import (
     DETECT_TRANSMISSION_BEFORE_WAKE_WORD
 )
 
-### HELPER FUNCTIONS ###
+### HELPER CLASSES AND FUNCTIONS ###
+
+class PiperTTSWrapper:
+    """A wrapper for PiperTTS to make it API-compatible with CoquiTTS."""
+    def __init__(self, model_path):
+        # Piper models are specified by a path to the .onnx file
+        self.voice = PiperVoice.load(model_path)
+        # Create a dummy synthesizer object to hold the sample rate
+        class Synthesizer:
+            def __init__(self, sample_rate):
+                self.output_sample_rate = sample_rate
+        self.synthesizer = Synthesizer(self.voice.config.sample_rate)
+        self.model_name = model_path
+
+    def tts(self, text, **kwargs):
+        """Synthesize text to speech and return as a numpy array."""
+        # Use synthesize_stream_raw to get audio data in memory
+        wav_bytes_stream = self.voice.synthesize_stream_raw(text)
+        wav_bytes = b"".join(wav_bytes_stream)
+
+        # Convert bytes to a numpy array of floats
+        audio_array = np.frombuffer(wav_bytes, dtype=np.int16).astype(np.float32)
+        
+        # Normalize to [-1, 1] range to be compatible with Coqui output
+        if np.max(np.abs(audio_array)) > 0:
+            audio_array /= np.iinfo(np.int16).max
+        
+        return audio_array
+
+def create_tts_engine():
+    """
+    Factory function to create the appropriate TTS engine instance.
+    """
+    if DEFAULT_TTS_ENGINE == TTS_ENGINE_COQUI:
+        print("🔧 Initializing Coqui TTS engine...")
+        try:
+            engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
+            print(f"✅ Using Coqui TTS model: {TTS_MODEL_TACOTRON2}")
+            # Configure CoquiTTS for speed over quality
+            if hasattr(engine, 'synthesizer') and hasattr(engine.synthesizer, 'tts_config'):
+                try:
+                    engine.synthesizer.tts_config.inference_noise_scale = TTS_INFERENCE_NOISE_SCALE
+                    engine.synthesizer.tts_config.inference_noise_scale_dp = TTS_INFERENCE_NOISE_SCALE_DP
+                    engine.synthesizer.tts_config.inference_sigma = TTS_INFERENCE_SIGMA
+                    print("✅ Coqui TTS speed optimizations applied")
+                except:
+                    print("⚠️  Could not apply Coqui TTS speed optimizations")
+            return engine
+        except Exception as e:
+            print(f"❌ CRITICAL: Failed to initialize Coqui TTS model ({TTS_MODEL_TACOTRON2}): {e}")
+            return None
+            
+    elif DEFAULT_TTS_ENGINE == TTS_ENGINE_PIPER:
+        print("🔧 Initializing Piper TTS engine...")
+        try:
+            engine = PiperTTSWrapper(model_path=TTS_PIPER_MODEL_PATH)
+            print(f"✅ Using Piper TTS model: {TTS_PIPER_MODEL_PATH}")
+            return engine
+        except Exception as e:
+            print(f"❌ CRITICAL: Failed to initialize Piper TTS model ({TTS_PIPER_MODEL_PATH}): {e}")
+            return None
+    else:
+        raise ValueError(f"Unsupported TTS engine type: {DEFAULT_TTS_ENGINE}")
 
 def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=None):
     """
@@ -211,24 +278,11 @@ context_mgr = ContextManager() # Initialize the context manager
 # Initialize Whisper voice recognition
 speech_recognition_engine = SpeechRecognitionEngine(ril)
 
-# Initialize CoquiTTS (with a faster model for better real-time performance)
-try:
-    coqui_tts_engine = CoquiTTS(model_name=TTS_MODEL_TACOTRON2, progress_bar=True, gpu=True)
-    print(f"✅ Using TTS model: {TTS_MODEL_TACOTRON2} (forced for testing, slower but reliable)")
-except Exception as e:
-    print(f"❌ CRITICAL: Failed to initialize the primary TTS model ({TTS_MODEL_TACOTRON2}): {e}")
+# Initialize TTS Engine
+tts_engine = create_tts_engine()
+if tts_engine is None:
     print("TTS will not be available. Exiting.")
     exit()
-# Configure CoquiTTS for speed over quality
-if hasattr(coqui_tts_engine, 'synthesizer') and hasattr(coqui_tts_engine.synthesizer, 'tts_config'):
-    # Try to set faster inference settings
-    try:
-        coqui_tts_engine.synthesizer.tts_config.inference_noise_scale = TTS_INFERENCE_NOISE_SCALE
-        coqui_tts_engine.synthesizer.tts_config.inference_noise_scale_dp = TTS_INFERENCE_NOISE_SCALE_DP
-        coqui_tts_engine.synthesizer.tts_config.inference_sigma = TTS_INFERENCE_SIGMA
-        print("✅ TTS speed optimizations applied")
-    except:
-        print("⚠️  Could not apply TTS speed optimizations")
 
 # Initialize wake word detector (using AST method)
 wake_detector = wake_word_detector.create_wake_word_detector(
@@ -239,7 +293,7 @@ wake_detector = wake_word_detector.create_wake_word_detector(
 
 # Initialize periodic identifier
 periodic_identifier = PeriodicIdentifier(
-    tts_engine=coqui_tts_engine,
+    tts_engine=tts_engine,
     radio_interface=ril,
     play_tts_function=play_tts_audio  # Use the fast method
 )
@@ -253,7 +307,7 @@ if HAS_INTERNET:
     print(f"AI model: {DEFAULT_ONLINE_MODEL} (online)")
 else:
     print(f"AI model: {DEFAULT_OFFLINE_MODEL} (offline)")
-print(f"Text-to-speech: {coqui_tts_engine.model_name}")
+print(f"Text-to-speech: {tts_engine.model_name}")
 print("=" * 50)
 
 ### MAIN LOOP ###
@@ -312,7 +366,7 @@ while True:
         if command_type == "terminate":
             print("🛑 Termination command identified by main.py. Shutting down...")
             play_tts_audio(f"Terminating. Have a nice day! This is {BOT_PHONETIC_CALLSIGN} shutting down my " +
-                           "processes. I am clear. Seven three.", coqui_tts_engine, ril)
+                           "processes. I am clear. Seven three.", tts_engine, ril)
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
@@ -327,14 +381,14 @@ while True:
                 {llm_info} for intelligence, 
                 the {AST_MODEL_NAME} for wake word detection, 
                 the Whisper version {speech_recognition_engine.version} for speech recognition, and 
-                the {coqui_tts_engine.model_name} for text-to-speech."""
-            play_tts_audio(status_report, coqui_tts_engine, ril)
+                the {tts_engine.model_name} for text-to-speech."""
+            play_tts_audio(status_report, tts_engine, ril)
             continue
         elif command_type == "reset":
             print("🔄 Reset command identified by main.py. Resetting context.")
             context_mgr.reset_context()
             play_tts_audio("My context has been reset. I am ready for a new conversation.", 
-                           coqui_tts_engine, ril)
+                           tts_engine, ril)
             continue
         else:
             # STEP 4: If no command was handled, proceed with conversation between the operator and the bot
@@ -356,7 +410,7 @@ while True:
                     tts_message = ai_response.replace("TTS_DIRECT:", "", 1)
                     print(f"🔊 APRS - Speaking directly: {tts_message[:100]}...")
                     context_mgr.add_ai_response_to_context(tts_message) # Add tooling responses to script/context
-                    play_tts_audio(tts_message, coqui_tts_engine, ril)
+                    play_tts_audio(tts_message, tts_engine, ril)
                     periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
             else:
@@ -370,7 +424,7 @@ while True:
             
             # STEP 5: Speak response
             print("🔊 Speaking response...")
-            play_tts_audio(ai_response, coqui_tts_engine, ril)
+            play_tts_audio(ai_response, tts_engine, ril)
             periodic_identifier.restart_timer()
 
         # Reset audio device after TTS for next recording cycle

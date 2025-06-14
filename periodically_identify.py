@@ -33,7 +33,7 @@ class PeriodicIdentifier:
         Initializes the periodic identifier.
         
         Args:
-            tts_engine: The CoquiTTS engine instance
+            tts_engine: The TTS engine instance (Coqui or Piper)
             radio_interface: The radio interface layer instance
             play_tts_function: Function to call for TTS playback (e.g., play_tts_audio)
             interval_minutes (int): Minutes between identification announcements

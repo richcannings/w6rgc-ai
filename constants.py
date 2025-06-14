@@ -122,6 +122,11 @@ REQUEST_TIMEOUT = 30  # seconds
 # TTS (Text-to-Speech) Configuration
 # ============================================================================
 
+# TTS Engine Selection
+TTS_ENGINE_COQUI = "coqui"
+TTS_ENGINE_PIPER = "piper"
+DEFAULT_TTS_ENGINE = TTS_ENGINE_PIPER  # Options: "coqui" or "piper"
+
 # Script File Path
 WRITE_SCRIPT_TO_FILE = False
 
@@ -131,10 +136,16 @@ _time_str = _now.strftime("%H-%M-%S")
 _date_str = _now.strftime("%Y-%m-%d")
 SCRIPT_FILE_PATH = f"chatbot-script-{_date_str}-{_time_str}.log"
 
-# TTS Model Options
+# Coqui TTS Model Options
 TTS_MODEL_FAST_PITCH = "tts_models/en/ljspeech/fast_pitch"
 TTS_MODEL_SPEEDY_SPEECH = "tts_models/en/ljspeech/speedy_speech"
 TTS_MODEL_TACOTRON2 = "tts_models/en/ljspeech/tacotron2-DDC"
+
+# Piper TTS Model Options
+# You need to download the piper model files (.onnx and .onnx.json) manually
+# from https://huggingface.co/rhasspy/piper-voices/tree/main
+# and provide the full path to the .onnx file below.
+TTS_PIPER_MODEL_PATH = "piper-tts-models/en_US-lessac-medium.onnx" # Example: "/path/to/your/piper/voices/en_US-lessac-medium.onnx"
 
 # TTS Audio Settings
 TTS_INFERENCE_NOISE_SCALE = 0.667
