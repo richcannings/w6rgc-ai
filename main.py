@@ -58,14 +58,10 @@
 #  - Audio device: Auto-detected AIOC adapter
 #  - Serial port: Auto-detected or manually set to /dev/ttyACM0 or /dev/ttyACM1
 
-import sounddevice as sd
 import numpy as np
 import time
-import requests
-import os
-import json
+import gc
 from TTS.api import TTS as CoquiTTS
-import re
 
 # modules part of the w6rgc/ai project
 import wake_word_detector
@@ -145,7 +141,7 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=Non
 
 def play_tts_audio(text_to_speak, tts_engine, radio_interface):
     """
-    Ultra-fast TTS audio playback using in-memory processing.
+    In memory TTS audio playback
     Handles PTT, audio preparation, and playback through the radio interface.
     
     Args:
@@ -267,25 +263,18 @@ while True:
         # STEP #0: Listen for carrier signal. This needs to be a clear transtion from no transmission to a
         # transmission.
         if DETECT_TRANSMISSION_BEFORE_WAKE_WORD:
-            print("🎤 Standing by for transmission. Waiting...")
-            transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
-            if transmission_detected:
-                print("🎤 Transmission detected. Restarting main loop.")
-                continue
-            print("🎤 Standing by for transmission. Waiting...")
-            # Don't start if someone is currently transmitting. If there is a transmission, start the main loop over.
-            transmission_detected = ril.check_carrier_sense(duration=0.1) # How little is too little? Was 0.2.
-            if transmission_detected:
-                # print("🎤 Transmission detected. Restarting main loop.")
-                continue
-            # Now wait for the transmission to start.
-            while not transmission_detected:  # This is the MAIN WAIT LOOP for carrier detection. 
-                time.sleep(0.2) # This delay is a guess. best to keep it short.
-                transmission_detected = ril.check_carrier_sense(duration=0.1)
-            if not transmission_detected:
-                # print("❌ Transmission not detected. Restarting loop.")
-                continue
+            # First, wait for the channel to be clear.
+            while ril.check_carrier_sense(duration=0.1):
+                print("🎤 Channel is busy. Waiting for it to be clear...")
+                time.sleep(0.5) # Wait before re-checking
 
+            # Now, wait for a new transmission to start.
+            print("🎤 Channel is clear. Standing by for new transmission...")
+            while not ril.check_carrier_sense(duration=0.1):
+                time.sleep(0.1) # Poll frequently to catch the start
+            print("🎤 New transmission detected.")
+            # At this point, a transmission has started on a previously clear channel.
+            
         # STEP 1: Wait for wake word detection
         # TODO(richc): Consider starting to record the audio WHILE listening for the wake word.
         print(f"🎤 Transmission detected. Listening for wake word '{DEFAULT_WAKE_WORD}'...")
@@ -367,7 +356,6 @@ while True:
                     tts_message = ai_response.replace("TTS_DIRECT:", "", 1)
                     print(f"🔊 APRS - Speaking directly: {tts_message[:100]}...")
                     context_mgr.add_ai_response_to_context(tts_message) # Add tooling responses to script/context
-                    ril.reset_audio_device()
                     play_tts_audio(tts_message, coqui_tts_engine, ril)
                     periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
@@ -382,9 +370,8 @@ while True:
             
             # STEP 5: Speak response
             print("🔊 Speaking response...")
-            ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
             play_tts_audio(ai_response, coqui_tts_engine, ril)
-            periodic_identifier.restart_timer
+            periodic_identifier.restart_timer()
 
         # Reset audio device after TTS for next recording cycle
         ril.reset_audio_device()            
