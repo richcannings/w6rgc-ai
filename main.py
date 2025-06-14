@@ -124,7 +124,7 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=Non
         serial_port_name (str): Serial port for PTT control (auto-selected if None)
         
     Returns:
-        RadioInterfaceLayer instance (AIOC or Digirig)
+        RadioInterfaceLayer instance (AIOC or Diggirig)
         
     Raises:
         ValueError: If ril_type is not supported
@@ -145,69 +145,45 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=Non
 
 def play_tts_audio(text_to_speak, tts_engine, radio_interface):
     """
-    Ultra-fast TTS audio playback using in-memory processing (no file I/O).
-    Handles PTT, audio preparation, and uses RadioInterfaceLayer for sd.play().
+    Ultra-fast TTS audio playback using in-memory processing.
+    Handles PTT, audio preparation, and playback through the radio interface.
+    
+    Args:
+        text_to_speak (str): Text to convert to speech
+        tts_engine: CoquiTTS engine instance
+        radio_interface: Radio interface layer instance
     """
     try:
-        radio_interface.reset_audio_device() # Reset before generating/playing audio
-        
-        print("🔊 Generating TTS audio (in-memory)...")
-        start_time = time.time()
+        # Reset audio device and generate TTS
+        radio_interface.reset_audio_device()
         tts_audio_data = tts_engine.tts(text=text_to_speak)
-        generation_time = time.time() - start_time
         tts_sample_rate = tts_engine.synthesizer.output_sample_rate
         
-        # Debug information about the audio data
-        print(f"🔍 Audio Debug Info:")
-        print(f"  - Sample rate: {tts_sample_rate} Hz")
-        print(f"  - Audio length: {len(tts_audio_data)} samples")
-        print(f"  - Expected duration: {len(tts_audio_data)/tts_sample_rate:.2f} seconds")
-        print(f"  - Generation time: {generation_time:.2f} seconds")
-        print(f"  - Data type: {type(tts_audio_data)}")
-        if isinstance(tts_audio_data, np.ndarray):
-            print(f"  - Shape: {tts_audio_data.shape}")
-            print(f"  - Min value: {np.min(tts_audio_data):.3f}")
-            print(f"  - Max value: {np.max(tts_audio_data):.3f}")
-        
-        # Convert to numpy array if it's not already
+        # Convert and normalize audio data
         if not isinstance(tts_audio_data, np.ndarray):
-            print("  - Converting to numpy array")
             tts_audio_data = np.array(tts_audio_data, dtype=np.float32)
         
         # Convert to mono if needed
         if tts_audio_data.ndim > 1 and tts_audio_data.shape[1] > 1:
-            print("  - Converting to mono")
             tts_audio_data = np.mean(tts_audio_data, axis=1)
         
         # Normalize audio
         max_val = np.max(np.abs(tts_audio_data))
         if max_val > 0:
-            print("  - Normalizing audio")
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
-        print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
+        # Transmit audio
         radio_interface.ptt_on()
-        # time.sleep(0.2) # PTT engage delay
-        
-        # Debug playback timing
-        playback_start = time.time()
         radio_interface.play_audio(tts_audio_data, tts_sample_rate)
-        playback_time = time.time() - playback_start
-        print(f"  - Actual playback time: {playback_time:.2f} seconds")
         
     except Exception as e:
-        print(f"❌ Error in TTS playback: {e}")
-        print(f"  - Error type: {type(e).__name__}")
-        import traceback
-        print(f"  - Stack trace: {traceback.format_exc()}")
+        print(f"❌ TTS Error: {str(e)}")
     finally:
-        radio_interface.ptt_off() # Ensure PTT is off
-        # Force garbage collection to prevent memory accumulation
-        import gc
+        radio_interface.ptt_off()
+        # Cleanup
         if 'tts_audio_data' in locals():
             del tts_audio_data
         gc.collect()
-        print("✅ Audio transmission cycle complete. PTT OFF.")
 
 ### INITIALIZATION ###
 

@@ -40,23 +40,46 @@ from constants import (
     CARRIER_SENSE_MAX_RETRIES,
     CARRIER_SENSE_RETRY_DELAY
 )
+from scipy.signal import resample
 
 class RadioInterfaceLayerAIOC:
-    def __init__(self, serial_port_name=DEFAULT_AIOC_SERIAL_PORT):
+    DEFAULT_SAMPLE_RATE = 16000 # Default to 16kHz for Whisper/AST compatibility
+    
+    def __init__(self, serial_port_name=DEFAULT_AIOC_SERIAL_PORT, sample_rate=DEFAULT_SAMPLE_RATE, input_channels=1):
         """
-        Initializes the Radio Interface Layer for the AIOC.
-        Detects the AIOC audio device and sets up PTT control.
+        Initializes the AIOC Radio Interface Layer.
+
+        Args:
+            serial_port_name (str): The serial port for PTT control.
+            sample_rate (int): The sample rate for the audio device.
+            input_channels (int): The number of input channels.
         """
-        self.audio_device_index = None
-        self.samplerate = None
-        self.channels = None
+        print(f"🔧 Initializing AIOC Radio Interface Layer...")
+        
+        # Audio device configuration
+        self.audio_device_index = self._find_aioc_device()
+        self.samplerate = sample_rate
+        self.input_channels = input_channels
         self.serial_conn = None
-        self.device_name = None
+        self.device_name = None # Set in _find_aioc_device
+        self.ptt_serial = None
+        
+        if self.audio_device_index is None:
+            raise RuntimeError("Could not find an AIOC audio device.")
 
-        self._find_aioc_device()
-        self._setup_serial(serial_port_name)
-        print(f"RadioInterfaceLayerAIOC initialized. Device: {self.device_name}, Samplerate: {self.samplerate}, Channels: {self.channels}")
+        # Set device name from query
+        self.device_name = sd.query_devices(self.audio_device_index)['name']
 
+        print(f"AIOC Config: Index={self.audio_device_index}, Name='{self.device_name}', SampleRate={self.samplerate}, InputChannels={self.input_channels}")
+
+        # Initialize PTT control
+        try:
+            self._setup_serial(serial_port_name)
+        except Exception as e:
+            raise RuntimeError(f"Failed to open AIOC serial port at {serial_port_name}: {e}")
+
+        print(f"RadioInterfaceLayerAIOC initialized. Device: {self.device_name}, Samplerate: {self.samplerate}, Channels: {self.input_channels}")
+        
     def _find_aioc_device(self):
         """
         Finds the AIOC audio device index, name, samplerate, and channels.
@@ -67,25 +90,7 @@ class RadioInterfaceLayerAIOC:
             if "All-In-One-Cable" in device.get('name', ''):
                 if device.get('max_input_channels', 0) > 0 and device.get('max_output_channels', 0) > 0:
                     print(f"Found AIOC device at index {i}: {device['name']}")
-                    self.audio_device_index = i
-                    self.device_name = device['name']
-                    self.samplerate = int(device.get('default_samplerate', WHISPER_TARGET_SAMPLE_RATE)) # Default to 16k if not specified
-                    
-                    # Determine input channels
-                    # Prefer 'max_input_channels' but ensure it's at least 1 if device is valid input
-                    # Some devices might report preferred channels as 0, so check max_input_channels
-                    self.channels = device.get('max_input_channels', 0)
-                    if self.channels == 0 and device.get('max_input_channels',0) > 0 : # Corrected this logic
-                        self.channels = DEFAULT_AUDIO_CHANNELS # Default to mono if max_input_channels > 0
-                    elif self.channels == 0 : # if still 0, means no input channels
-                         print(f"Warning: AIOC device {device['name']} reports 0 input channels despite max_input_channels > 0. Defaulting to 1 channel.")
-                         self.channels = DEFAULT_AUDIO_CHANNELS # Fallback if device has input capability but reports 0 channels.
-
-                    if self.channels == 0: # Final check
-                        raise RuntimeError(f"AIOC device {device['name']} has no usable input channels.")
-
-                    print(f"AIOC Config: Index={self.audio_device_index}, Name='{self.device_name}', SampleRate={self.samplerate}, InputChannels={self.channels}")
-                    return
+                    return i
         
         print("AIOC device not found. Available audio devices:")
         for i, device in enumerate(devices):
@@ -109,8 +114,7 @@ class RadioInterfaceLayerAIOC:
             # For now, re-raising to indicate a critical setup failure.
             raise RuntimeError(f"Failed to initialize PTT on {port_name}. Radio control will not be possible.") from e
 
-
-    def check_carrier_sense(self, duration=CARRIER_SENSE_DURATION):
+    def check_carrier_sense(self, duration=0.2, threshold=0.01):
         """
         Checks for audio input (carrier) on the radio frequency.
         Returns True if carrier is detected, False if frequency is clear.
@@ -125,23 +129,23 @@ class RadioInterfaceLayerAIOC:
         try:
             print(f"📡 Checking carrier sense for {duration}s...")
             
-            # Get stream parameters
-            stream_params = self.get_input_stream_params()
-            
-            # Calculate number of frames to read
-            frames_to_read = int(duration * self.samplerate)
-            frame_size = int(0.1 * self.samplerate)  # 100ms frames
-            
-            with sd.InputStream(**stream_params) as stream:
-                for _ in range(0, frames_to_read, frame_size):
-                    frame, _ = stream.read(frame_size)
-                    frame = np.squeeze(frame)
-                    amplitude = np.max(np.abs(frame))
-                    
-                    if amplitude > AUDIO_THRESHOLD:
-                        print(f"📡 Carrier detected (amplitude: {amplitude:.4f})")
-                        return True
-                        
+            with sd.InputStream(device=self.audio_device_index, channels=1, samplerate=self.samplerate) as stream:
+                # Let the stream settle
+                time.sleep(0.1)
+                
+                # Read a chunk of audio
+                audio_chunk, overflowed = stream.read(int(self.samplerate * duration))
+                
+                if overflowed:
+                    print("⚠️ Input overflow while checking for carrier sense!")
+
+                # Calculate RMS amplitude
+                amplitude = np.sqrt(np.mean(np.square(audio_chunk)))
+
+                if amplitude > threshold:
+                    print(f"📡 Carrier detected (amplitude: {amplitude:.4f})")
+                    return True
+
             print("📡 Frequency clear")
             return False
             
@@ -229,55 +233,54 @@ class RadioInterfaceLayerAIOC:
         """
         Plays the given audio data through the AIOC device.
         Assumes audio_data is already prepared (numpy array, mono, normalized).
-        Automatically resamples to device-supported sample rate if needed.
+        Automatically resamples to the device's sample rate if needed.
         """
         if self.audio_device_index is None:
             print("Error: AIOC audio device not configured for playback.")
             return
-        
-        # Check if we need to resample
-        target_sample_rate = sample_rate
-        supported_rates = [44100, 48000]  # Known supported rates for most USB audio devices
-        
-        if sample_rate not in supported_rates:
-            # Resample to 44100 Hz (most commonly supported)
-            target_sample_rate = 44100
-            print(f"🔄 Resampling audio from {sample_rate} Hz to {target_sample_rate} Hz...")
-            
-            # Calculate new length
-            new_length = int(len(audio_data) * target_sample_rate / sample_rate)
-            
-            # Resample using scipy
-            from scipy.signal import resample
-            audio_data = resample(audio_data, new_length)
-            
-            print(f"✅ Resampled audio: {len(audio_data)} samples at {target_sample_rate} Hz")
 
+        # Resample if the source sample rate doesn't match the device rate
+        if sample_rate != self.samplerate:
+            print(f"🔄 Resampling audio from {sample_rate} Hz to {self.samplerate} Hz...")
+            try:
+                # from scipy.signal import resample
+                new_length = int(len(audio_data) * self.samplerate / sample_rate)
+                audio_data = resample(audio_data, new_length)
+                print(f"✅ Resampled audio: {len(audio_data)} samples at {self.samplerate} Hz")
+            except ImportError:
+                print("⚠️ SciPy not installed. Cannot resample audio. Playback may fail or be distorted.")
+                print("   Please install it with: pip install scipy")
+            except Exception as e:
+                print(f"❌ Error during resampling: {e}")
+                return # Can't proceed if resampling fails
+        
         try:
-            print(f"🔊 Playing audio via AIOC (raw) on device {self.audio_device_index} at {target_sample_rate} Hz...")
+            print(f"🔊 Playing audio via AIOC (raw) on device {self.audio_device_index} at {self.samplerate} Hz...")
             sd.play(
                 audio_data,
-                samplerate=target_sample_rate,
+                samplerate=self.samplerate,
                 device=self.audio_device_index,
                 blocking=True
             )
         except Exception as e:
             print(f"Error during AIOC audio playback (sd.play): {e}")
-        # finally: # PTT control is now handled by the caller.
-            # self.ptt_off()
 
     def get_input_stream_params(self):
-        """
-        Returns a dictionary of parameters needed to open an input stream
-        from the AIOC device.
-        """
-        if self.audio_device_index is None or self.samplerate is None or self.channels is None:
-             raise RuntimeError("AIOC device not initialized properly to get input stream parameters.")
+        """Returns parameters for sd.InputStream."""
         return {
-            "device": self.audio_device_index,
-            "samplerate": self.samplerate,
-            "channels": self.channels,
-            "dtype": 'float32'  # Standard float32 for processing
+            'device': self.audio_device_index,
+            'samplerate': self.samplerate,
+            'channels': self.input_channels,
+            'dtype': 'float32'
+        }
+        
+    def get_output_stream_params(self):
+        """Returns parameters for sd.OutputStream."""
+        return {
+            'device': self.audio_device_index,
+            'samplerate': self.samplerate,
+            'channels': self.get_channels(),
+            'dtype': 'float32'
         }
 
     def get_samplerate(self):
@@ -288,9 +291,9 @@ class RadioInterfaceLayerAIOC:
 
     def get_channels(self):
         """Returns the number of input channels of the AIOC device."""
-        if self.channels is None:
+        if self.input_channels is None:
             raise RuntimeError("Number of channels not determined. AIOC device might not be initialized.")
-        return self.channels
+        return self.input_channels
         
     def get_audio_device_index(self):
         """Returns the audio device index for the AIOC."""
