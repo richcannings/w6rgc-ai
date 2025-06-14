@@ -276,7 +276,6 @@ while True:
             # At this point, a transmission has started on a previously clear channel.
             
         # STEP 1: Wait for wake word detection
-        # TODO(richc): Consider starting to record the audio WHILE listening for the wake word.
         print(f"🎤 Transmission detected. Listening for wake word '{DEFAULT_WAKE_WORD}'...")
         # AST detector listens and returns when the wake word was detected
         wake_detected = wake_detector.listen_for_wake_word(
@@ -291,7 +290,8 @@ while True:
 
         # Step 2a: Transmit a tone, notifying the operator that the chatbot copied their messsage.
         # TODO(richc): Kick off a thread to play notification audio clip to notify the user that 
-        #              the bot got the message.
+        # the bot got the message. Tried. There is a delay... Just as much as it takes for the 
+        # chatbot to respond. I may dive int it later. I may need to implement a queue for the ril.
 
         # STEP 2: Transcribe the audio to text
         print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
