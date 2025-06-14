@@ -60,7 +60,6 @@
 
 import sounddevice as sd
 import numpy as np
-import soundfile as sf
 import time
 import requests
 import os
@@ -99,7 +98,6 @@ from constants import (
     TTS_INFERENCE_NOISE_SCALE,
     TTS_INFERENCE_NOISE_SCALE_DP,
     TTS_INFERENCE_SIGMA,
-    TTS_OUTPUT_FILE,
     
     # Hardware configuration
     DEFAULT_AIOC_SERIAL_PORT,
@@ -145,7 +143,7 @@ def create_radio_interface_layer(ril_type=DEFAULT_RIL_TYPE, serial_port_name=Non
     else:
         raise ValueError(f"Unsupported RIL type: {ril_type}. Supported types: {RIL_TYPE_AIOC}, {RIL_TYPE_DIGIRIG}")
 
-def play_tts_audio_fast(text_to_speak, tts_engine, radio_interface):
+def play_tts_audio(text_to_speak, tts_engine, radio_interface):
     """
     Ultra-fast TTS audio playback using in-memory processing (no file I/O).
     Handles PTT, audio preparation, and uses RadioInterfaceLayer for sd.play().
@@ -154,28 +152,54 @@ def play_tts_audio_fast(text_to_speak, tts_engine, radio_interface):
         radio_interface.reset_audio_device() # Reset before generating/playing audio
         
         print("🔊 Generating TTS audio (in-memory)...")
+        start_time = time.time()
         tts_audio_data = tts_engine.tts(text=text_to_speak)
+        generation_time = time.time() - start_time
         tts_sample_rate = tts_engine.synthesizer.output_sample_rate
         
+        # Debug information about the audio data
+        print(f"🔍 Audio Debug Info:")
+        print(f"  - Sample rate: {tts_sample_rate} Hz")
+        print(f"  - Audio length: {len(tts_audio_data)} samples")
+        print(f"  - Expected duration: {len(tts_audio_data)/tts_sample_rate:.2f} seconds")
+        print(f"  - Generation time: {generation_time:.2f} seconds")
+        print(f"  - Data type: {type(tts_audio_data)}")
+        if isinstance(tts_audio_data, np.ndarray):
+            print(f"  - Shape: {tts_audio_data.shape}")
+            print(f"  - Min value: {np.min(tts_audio_data):.3f}")
+            print(f"  - Max value: {np.max(tts_audio_data):.3f}")
+        
+        # Convert to numpy array if it's not already
         if not isinstance(tts_audio_data, np.ndarray):
+            print("  - Converting to numpy array")
             tts_audio_data = np.array(tts_audio_data, dtype=np.float32)
         
+        # Convert to mono if needed
         if tts_audio_data.ndim > 1 and tts_audio_data.shape[1] > 1:
+            print("  - Converting to mono")
             tts_audio_data = np.mean(tts_audio_data, axis=1)
         
+        # Normalize audio
         max_val = np.max(np.abs(tts_audio_data))
         if max_val > 0:
+            print("  - Normalizing audio")
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
         print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
         radio_interface.ptt_on()
-        time.sleep(0.2) # PTT engage delay
+        # time.sleep(0.2) # PTT engage delay
+        
+        # Debug playback timing
+        playback_start = time.time()
         radio_interface.play_audio(tts_audio_data, tts_sample_rate)
+        playback_time = time.time() - playback_start
+        print(f"  - Actual playback time: {playback_time:.2f} seconds")
         
     except Exception as e:
-        print(f"❌ Error in fast TTS playback (main.py): {e}")
-        print("🔄 Falling back to file-based method...")
-        play_tts_audio(text_to_speak, tts_engine, radio_interface)
+        print(f"❌ Error in TTS playback: {e}")
+        print(f"  - Error type: {type(e).__name__}")
+        import traceback
+        print(f"  - Stack trace: {traceback.format_exc()}")
     finally:
         radio_interface.ptt_off() # Ensure PTT is off
         # Force garbage collection to prevent memory accumulation
@@ -183,46 +207,7 @@ def play_tts_audio_fast(text_to_speak, tts_engine, radio_interface):
         if 'tts_audio_data' in locals():
             del tts_audio_data
         gc.collect()
-        print("✅ Audio transmission cycle complete (fast mode). PTT OFF.")
-
-def play_tts_audio(text_to_speak, tts_engine, radio_interface):
-    """
-    Optimized TTS audio playback with file-based fallback.
-    Handles PTT, audio preparation, and uses RadioInterfaceLayer for sd.play().
-    """
-    try:
-        radio_interface.reset_audio_device() # Reset before generating/playing audio
-
-        print("🔊 Generating TTS audio (file-based fallback)...")
-        tts_engine.tts_to_file(
-            text=text_to_speak, 
-            file_path=TTS_OUTPUT_FILE,
-        )
-        tts_audio_data, tts_sample_rate = sf.read(TTS_OUTPUT_FILE, dtype='float32')
-        
-        if tts_audio_data.ndim > 1 and tts_audio_data.shape[1] > 1:
-            tts_audio_data = np.mean(tts_audio_data, axis=1)
-        
-        max_val = np.max(np.abs(tts_audio_data))
-        if max_val > 0:
-            tts_audio_data = tts_audio_data * 0.95 / max_val
-        
-        print(f"🔊 Prepared audio for RIL ({len(tts_audio_data)/tts_sample_rate:.1f}s). PTT ON.")
-        radio_interface.ptt_on()
-        time.sleep(0.3) # PTT engage delay (slightly longer for file method just in case)
-        radio_interface.play_audio(tts_audio_data, tts_sample_rate)
-
-    except Exception as e:
-        print(f"❌ Error in TTS playback (main.py file-based): {e}")
-    finally:
-        radio_interface.ptt_off() # Ensure PTT is off
-        if os.path.exists(TTS_OUTPUT_FILE):
-            os.remove(TTS_OUTPUT_FILE)
-        import gc
-        if 'tts_audio_data' in locals():
-            del tts_audio_data
-        gc.collect()
-        print("✅ Audio transmission cycle complete (file-based). PTT OFF.")
+        print("✅ Audio transmission cycle complete. PTT OFF.")
 
 ### INITIALIZATION ###
 
@@ -284,7 +269,7 @@ wake_detector = wake_word_detector.create_wake_word_detector(
 periodic_identifier = PeriodicIdentifier(
     tts_engine=coqui_tts_engine,
     radio_interface=ril,
-    play_tts_function=play_tts_audio  # Use the file-based method for reliability
+    play_tts_function=play_tts_audio  # Use the fast method
 )
 periodic_identifier.start()
 
@@ -407,7 +392,7 @@ while True:
                     print(f"🔊 APRS - Speaking directly: {tts_message[:100]}...")
                     context_mgr.add_ai_response_to_context(tts_message) # Add tooling responses to script/context
                     ril.reset_audio_device()
-                    play_tts_audio_fast(tts_message, coqui_tts_engine, ril)
+                    play_tts_audio(tts_message, coqui_tts_engine, ril)
                     periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
             else:
@@ -422,7 +407,7 @@ while True:
             # STEP 5: Speak response
             print("🔊 Speaking response...")
             ril.reset_audio_device() # Reset audio device before TTS to prevent conflicts
-            play_tts_audio_fast(ai_response, coqui_tts_engine, ril)
+            play_tts_audio(ai_response, coqui_tts_engine, ril)
             periodic_identifier.restart_timer
 
         # Reset audio device after TTS for next recording cycle
