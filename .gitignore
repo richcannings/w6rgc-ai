@@ -64,3 +64,31 @@ Thumbs.db
 # Keys
 gemini_api_key.txt
 weather_api_key.txt
+
+# Notebooks
+.ipynb_checkpoints
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Test files
+/test_*.py
+
+# Log files
+/chatbot-script-*.log
+
+# Ignore TTS model files
+/ollama_tts.wav
+
+# Gemini API key
+/gemini_api_key.txt
+
+# Weather API key
+/weather_api_key.txt
+
+# Piper TTS models
+piper-tts-models/*.onnx
+piper-tts-models/*.onnx.json

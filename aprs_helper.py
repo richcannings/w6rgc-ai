@@ -174,7 +174,6 @@ def _format_message(message):
                 parts[i] = ' '.join(num_str) + rest_str
         message = '@'.join(parts)
     
-    print(f"Formatted APRS message (How does it deal with phone numbers?): {message}")
     return message
 
 def _natural_language_messages(messages):

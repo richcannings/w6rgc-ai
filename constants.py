@@ -145,8 +145,7 @@ TTS_MODEL_TACOTRON2 = "tts_models/en/ljspeech/tacotron2-DDC"
 # You need to download the piper model files (.onnx and .onnx.json) manually
 # from https://huggingface.co/rhasspy/piper-voices/tree/main
 # and provide the full path to the .onnx file below.
-TTS_PIPER_MODEL_PATH = "piper-tts-models/en_US-lessac-medium.onnx" # Example: "/path/to/your/piper/voices/en_US-lessac-medium.onnx"
-
+TTS_PIPER_MODEL_PATH = "piper-tts-models/en_US-lessac-medium.onnx" # Example that sounds like Coqui: "piper-tts-models/en_US-ljspeech-medium.onnx"
 # TTS Audio Settings
 TTS_INFERENCE_NOISE_SCALE = 0.667
 TTS_INFERENCE_NOISE_SCALE_DP = 1.0
