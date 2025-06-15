@@ -1,42 +1,46 @@
-# W6RGC/AI: On and off grid ham radio AI voice assistant
+# W6RGC/AI: AI amateur radio operator and voice assistant
+AI is changing everything. [7?](https://en.wikipedia.org/wiki/Wire_signal) Are you ready?
 
 ## Overview
 
-AI is changing everything. Operator: [7?](https://en.wikipedia.org/wiki/Wire_signal) Are you ready? 7?
+The W6RGC/AI project introduces Artificial Intelligence to amateur radio operations in the form of an AI ham radio operator and voice assistant named Seven W6RGC/AI. Seven has the ability to support human operators with a growing number of capabilities when Seven is operating with or without internet.
 
-W6RGC/AI is an experiment applying AI to ham radio in the form of an AI voice assistant chat bot and runs an assortment of online and fully offline ("off grid") AI models.
+### Your ham radio is the user interface
 
-**Your ham radio is the user interface**
+When on the air, activate Seven by saying "Seven" at the start of every transmission, pause for a second, and then start talking to Seven like you would with any operator. To learn more, ask Seven what its capable of. The experience is similar to Siri, Google Assistant, or Alexa.
 
-When on the air, activate W6RGC/AI by saying "Seven" at the start of every transmission, and then talk to Seven normally, like asking what its capable of. The experience is similar to Siri, Google Assistant, or Alexa.
+### Seven acts on your behalf
 
-**The models learn anything**
+Seven has limited access to the internet and limited control of the computer its running on. "Tooling" is the process to provide this sort of access and ability to operators.
 
-Update the prompts to your needs. The default prompt trains the bot to:
-*   Perform QSOs (exchange call sign, name, location, and signal report with confirmation)
-*   Run simple nets (handle corrections, maintain list, count)
-*   Transcribe and confirm [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing
-*   Adhere to amateur radio [FCC Part 97](https://www.arrl.org/files/file/Regulatory/Part%2097%20-%20%2016%20Jan%202024.pdf) rules and regulations.
+Tools include:
+*   **[APRS](https://www.aprs.org/) messaging**: Natural language APRS message sending and receiving (online only)
+*   **Wikipedia**: Look up anything on Wikipedia, get a summary, and ask follow up questions about the topic. (online only)
+*   **GPS and grid square lookup**: Operator describes their location and receives an estimated GPS and grid square location (online only, requires a Google "Geocoding API" key)
+*   **Weather**: Reports current weather and 3 day forecast by location, using [OpenWeatherMap](https://openweathermap.org/). (online only, requires free API key)
+*   **Time**: Tells you the time and date in any time zone. (online and offline)
+*   **Regular expression based voice commands**: like "exit", "status", "identify". (online and offline)
 
-Why not create a FEMA/ARES/EOC expert by training the bot on all FEMA, ARES, and county documentation available.
+Future versions will include AI rig control, more computer controls, and specifically, "offline" voice APRS messaging, beaconing, and digipeating.
 
-**The models act on your behalf**
+Vibe coders / No coders: Add your own tools! There is enough tooling context in the source code that IA programming tools can easily build whatever you imagine without any need for you to code.
 
-Often called Tooling or Function Calling, the AI chatbot can access the internet when available and perform other actions.
+### Seven is trained to help you
 
-Function based features include:
-*   Voice-based [APRS](https://www.aprs.org/): Natural language APRS message sending/receiving (online only)
-*   Voice based weather reporting by location, using [OpenWeatherMap](https://openweathermap.org/). (online only, requires free API key)
-*   Voice based time and date checking. Works with time zones. (online and offline)
-*   Voice based Wikipedia lookups. (online only)
-*   Voice based GPS coordinate and Maidenhead grid square lookups for a given location description. (online only, requires free Google Places API key)
-*   Basic voice commands using regular expressions, like "status", "exit", "identify". (online and offline)
+Seven is an AI bot. Therefore, it has cognitiion and can reason based and what you say on the air and what
+you "Train" the AI bot on.
 
-Future versions will include AI rig, computer control, and features based on that, like offline voice APRS.
+Using prompts, Seven is trained to perform the follow ham radio operations:
+*   **QSOs**: Performs QSOs (exchange call sign, name, location, and signal report with confirmation)
+*   **Net Control Station**: Runs simple nets (handle corrections, maintain list, count)
+*   **ARES Message Passing**: Transcribe and confirm [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing
+*   **And generally a good ham radio operator**: Adhere to amateur radio [FCC Part 97](https://www.arrl.org/files/file/Regulatory/Part%2097%20-%20%2016%20Jan%202024.pdf) rules and regulations.
 
-**Built to start tinkering now**
+What to start tinkering with prompts/training? The LLMs can be trained on any material. For example, I=if it turns out that "AI is the new electricity," then this app can be your "back up reasoning generator". Train it on all FEMA, ARES, and county documentation available and it'll be a FEMA/ARES/EOC expert.
 
-Its modular by design. One can change any of the AI models, update the prompts, and there is enough source code precedent to easily vibe code more functions.
+###Built to start tinkering now
+
+W6RGC/AI is modular for tinkering. One can change **any** of the AI models, update the prompts, and there is enough source code precedent to easily vibe code more functions.
 
 Offline mode allows you to run this as an AI backup system, for the day when AI becomes as a necessity as electricity and communication.
 

@@ -216,6 +216,7 @@ def play_tts_audio(text_to_speak, tts_engine, radio_interface):
         tts_engine: CoquiTTS engine instance
         radio_interface: Radio interface layer instance
     """
+    ptt_activated = False
     try:
         # Reset audio device and generate TTS
         radio_interface.reset_audio_device()
@@ -235,14 +236,34 @@ def play_tts_audio(text_to_speak, tts_engine, radio_interface):
         if max_val > 0:
             tts_audio_data = tts_audio_data * 0.95 / max_val
         
-        # Transmit audio
+        # Transmit audio - CRITICAL: Track PTT state
         radio_interface.ptt_on()
-        radio_interface.play_audio(tts_audio_data, tts_sample_rate)
+        ptt_activated = True
+        
+        # Play audio with additional error handling
+        try:
+            radio_interface.play_audio(tts_audio_data, tts_sample_rate)
+        except Exception as play_error:
+            print(f"❌ Audio playback error: {play_error}")
+            # Don't re-raise, we still need to turn PTT OFF
         
     except Exception as e:
         print(f"❌ TTS Error: {str(e)}")
     finally:
-        radio_interface.ptt_off()
+        # CRITICAL: Always turn PTT OFF, even if there are exceptions
+        if ptt_activated:
+            try:
+                radio_interface.ptt_off()
+            except Exception as ptt_error:
+                print(f"❌ CRITICAL: PTT OFF failed: {ptt_error}")
+                # Try emergency PTT OFF
+                try:
+                    if hasattr(radio_interface, 'serial_conn') and radio_interface.serial_conn and radio_interface.serial_conn.is_open:
+                        radio_interface.serial_conn.setRTS(False)
+                        print("🚨 Emergency PTT OFF executed")
+                except Exception as emergency_error:
+                    print(f"❌ EMERGENCY PTT OFF FAILED: {emergency_error}")
+        
         # Cleanup
         if 'tts_audio_data' in locals():
             del tts_audio_data

@@ -180,10 +180,11 @@ class RadioInterfaceLayerDigiRig:
     def play_audio(self, audio_data, sample_rate):
         """
         Plays the given audio data through the Digirig device.
+        Improved error handling to prevent PTT getting stuck.
         """
         if self.audio_device_index is None:
             print("Error: Digirig audio device not configured for playback.")
-            return
+            raise RuntimeError("Digirig audio device not configured")
 
         if sample_rate != self.samplerate:
             print(f"🔄 Resampling audio from {sample_rate} Hz to {self.samplerate} Hz...")
@@ -192,13 +193,20 @@ class RadioInterfaceLayerDigiRig:
                 audio_data = resample(audio_data, new_length)
             except Exception as e:
                 print(f"❌ Error during resampling: {e}")
-                return
+                raise RuntimeError(f"Audio resampling failed: {e}")
         
         try:
             print(f"🔊 Playing audio via Digirig on device {self.audio_device_index} at {self.samplerate} Hz...")
             sd.play(audio_data, samplerate=self.samplerate, device=self.audio_device_index, blocking=True)
+            print("🔊 Audio playback completed successfully")
         except Exception as e:
-            print(f"Error during Digirig audio playback: {e}")
+            print(f"❌ Error during Digirig audio playback: {e}")
+            # Try to stop any ongoing playback
+            try:
+                sd.stop()
+            except:
+                pass
+            raise RuntimeError(f"Audio playback failed: {e}")
 
     def get_input_stream_params(self):
         """Returns parameters for sd.InputStream."""
