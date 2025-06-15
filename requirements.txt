@@ -14,3 +14,4 @@ google-generativeai
 beautifulsoup4
 pytz
 piper-tts
+wikipedia-api

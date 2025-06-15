@@ -53,6 +53,7 @@ from constants import (
 from aprs_helper import get_aprs_messages, send_aprs_message
 from weather_helper import get_weather_forecast
 from time_helper import get_timezone_time
+from wikipedia_helper import get_wikipedia_summary
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -201,12 +202,33 @@ get_timezone_time_func = FunctionDeclaration(
     }
 )
 
+# Define the Wikipedia tool
+get_wikipedia_summary_func = FunctionDeclaration(
+    name="get_wikipedia_summary",
+    description=(
+        "Fetches a summary of a Wikipedia page for a given topic. "
+        "Use this when the operator asks for information on a topic that can be found on Wikipedia. "
+        "This function returns a summary and offers to provide more details."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "topic": {
+                "type": "string",
+                "description": "The topic to search for on Wikipedia (e.g., 'Quantum physics', 'History of radio')."
+            }
+        },
+        "required": ["topic"]
+    }
+)
+
 # Create the tool with all function declarations
 aprs_tool = Tool(function_declarations=[
     get_operator_aprs_messages_func, 
     send_aprs_message_func,
     get_weather_forecast_func,
-    get_timezone_time_func
+    get_timezone_time_func,
+    get_wikipedia_summary_func
 ])
 
 def ask_gemini(prompt: str, model_name: Optional[str] = None, 
@@ -378,6 +400,27 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                         display_tz = timezone if timezone else "default timezone"
                         print(f"❌ Error calling get_timezone_time for {display_tz}: {e}")
                         return f"An error occurred while trying to get time information for {display_tz}: {str(e)}"
+                
+                elif fc.name == "get_wikipedia_summary":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    topic = fc.args.get("topic")
+
+                    if not topic:
+                        return "I need a topic to look up on Wikipedia. Please tell me what you'd like to know about."
+
+                    try:
+                        print(f"🌐 Calling wikipedia_helper.get_wikipedia_summary for topic: {topic}")
+                        wiki_result = get_wikipedia_summary(topic)
+                        wiki_summary = wiki_result.get("summary", "No summary found.")
+                        print(f"📖 Wikipedia summary received for {topic}: {wiki_summary[:100]}...") # Log snippet
+                        
+                        # The summary from the helper already includes a prompt for more info
+                        return f"TTS_DIRECT:{wiki_summary}"
+                        
+                    except Exception as e:
+                        print(f"❌ Error calling get_wikipedia_summary for {topic}: {e}")
+                        return f"An error occurred while trying to get information for {topic} from Wikipedia: {str(e)}"
             
             # If no function call was made, or it wasn't the one we handle, proceed with normal text response
             if hasattr(response, 'text') and response.text:
