@@ -64,6 +64,7 @@ Thumbs.db
 # Keys
 gemini_api_key.txt
 weather_api_key.txt
+google_places_api_key.txt
 
 # Notebooks
 .ipynb_checkpoints

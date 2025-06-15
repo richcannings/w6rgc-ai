@@ -29,6 +29,7 @@ Function based features include:
 *   Voice based weather reporting by location, using [OpenWeatherMap](https://openweathermap.org/). (online only, requires free API key)
 *   Voice based time and date checking. Works with time zones. (online and offline)
 *   Voice based Wikipedia lookups. (online only)
+*   Voice based GPS coordinate and Maidenhead grid square lookups for a given location description. (online only, requires free Google Places API key)
 *   Basic voice commands using regular expressions, like "status", "exit", "identify". (online and offline)
 
 Future versions will include AI rig, computer control, and features based on that, like offline voice APRS.
@@ -55,6 +56,7 @@ W6RGC/AI offers a range of features leveraging various AI technologies:
 *   **Weather Information:** Get current weather and 3-day forecasts for any location using natural language voice commands (requires internet and OpenWeatherMap API key).
 *   **Time Zone Information:** Get current time and date for any timezone using natural language voice commands (defaults to Pacific Time if no timezone specified).
 *   **Wikipedia Information:** Get a summary of a Wikipedia article on a given topic using natural language (requires internet).
+*   **GPS Coordinates:** Get the latitude, longitude, and Maidenhead grid square for a location based on a natural language description (requires internet and a Google Places API key).
 *   **Basic Voice Commands:** Regex-based commands for "status," "exit," "reset," and "identify."
 
 **Core Technical Features:**
@@ -127,6 +129,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
 - **`periodically_identify.py`**: Handles periodic station identification
 - **`aprs_helper.py`**: APRS message sending/receiving via findu.com
 - **`wikipedia_helper.py`**: Fetches summaries from Wikipedia via its API.
+- **`location_helper.py`**: Converts natural language location descriptions to GPS coordinates using Google Places API.
 - **`speech_recognition.py`**: Whisper-based speech-to-text processing
 - **`llm_gemini_online.py`**: Google Gemini API integration with function calling
 - **`llm_ollama_offline.py`**: Local Ollama LLM integration for offline operation
@@ -237,6 +240,9 @@ REQUEST_TIMEOUT = 30  # seconds
 
 # Weather API Configuration (for weather function calling)
 WEATHER_API_KEY_FILE = "weather_api_key.txt"  # Store your OpenWeatherMap API key here
+
+# Google Places API Configuration
+GOOGLE_PLACES_API_KEY_FILE = "google_places_api_key.txt" # Store your Google Places API key here
 ```
 
 ### Wake Word Detection

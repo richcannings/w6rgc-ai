@@ -190,3 +190,12 @@ AUDIO_FRAME_MS = 100  # milliseconds per audio frame for processing
 
 # Carrier sense before wake word detection
 DETECT_TRANSMISSION_BEFORE_WAKE_WORD = True
+
+# Weather API Configuration (for weather function calling)
+WEATHER_API_KEY_FILE = "weather_api_key.txt"  # Store your OpenWeatherMap API key here
+
+# Google Places API Configuration
+GOOGLE_PLACES_API_KEY_FILE = "google_places_api_key.txt"
+
+# APRS Configuration
+APRS_URL = "http://www.findu.com/cgi-bin/sendmsg.cgi"

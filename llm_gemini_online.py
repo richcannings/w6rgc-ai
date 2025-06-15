@@ -54,6 +54,7 @@ from aprs_helper import get_aprs_messages, send_aprs_message
 from weather_helper import get_weather_forecast
 from time_helper import get_timezone_time
 from wikipedia_helper import get_wikipedia_summary
+from location_helper import get_gps_coordinates
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -222,13 +223,33 @@ get_wikipedia_summary_func = FunctionDeclaration(
     }
 )
 
+# Define the GPS tool
+get_gps_coordinates_func = FunctionDeclaration(
+    name="get_gps_coordinates",
+    description=(
+        "Gets the GPS coordinates (latitude and longitude) for a given natural language location description. "
+        "Use this when the operator asks for their coordinates or the coordinates of a specific place."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "location_description": {
+                "type": "string",
+                "description": "A description of the location (e.g., 'the park near city hall', 'downtown Los Angeles')."
+            }
+        },
+        "required": ["location_description"]
+    }
+)
+
 # Create the tool with all function declarations
-aprs_tool = Tool(function_declarations=[
+ai_tools = Tool(function_declarations=[
     get_operator_aprs_messages_func, 
     send_aprs_message_func,
     get_weather_forecast_func,
     get_timezone_time_func,
-    get_wikipedia_summary_func
+    get_wikipedia_summary_func,
+    get_gps_coordinates_func
 ])
 
 def ask_gemini(prompt: str, model_name: Optional[str] = None, 
@@ -280,11 +301,11 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
         try:
             print(f"🤖 Sending prompt to Gemini (attempt {attempt + 1}/{MAX_RETRIES})...")
             
-            # Generate response, including the APRS tool
+            # Generate response, including the AI tools
             response = current_model.generate_content(
                 prompt, # User's initial prompt as a string
                 generation_config=generation_config,
-                tools=[aprs_tool] 
+                tools=[ai_tools] 
             )
             
             # Check for function call in the response
@@ -421,6 +442,25 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                     except Exception as e:
                         print(f"❌ Error calling get_wikipedia_summary for {topic}: {e}")
                         return f"An error occurred while trying to get information for {topic} from Wikipedia: {str(e)}"
+                
+                elif fc.name == "get_gps_coordinates":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    location_description = fc.args.get("location_description")
+
+                    if not location_description:
+                        return "I need a description of the location to find its GPS coordinates. Please tell me where you are."
+
+                    try:
+                        print(f"📍 Calling location_helper.get_gps_coordinates for: {location_description}")
+                        gps_info = get_gps_coordinates(location_description)
+                        print(f"🗺️ GPS info received for {location_description}: {gps_info}")
+                        
+                        return f"TTS_DIRECT:{gps_info}"
+                        
+                    except Exception as e:
+                        print(f"❌ Error calling get_gps_coordinates for {location_description}: {e}")
+                        return f"An error occurred while trying to get GPS coordinates for {location_description}: {str(e)}"
             
             # If no function call was made, or it wasn't the one we handle, proceed with normal text response
             if hasattr(response, 'text') and response.text:
