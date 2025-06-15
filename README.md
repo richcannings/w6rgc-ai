@@ -28,6 +28,7 @@ Function based features include:
 *   Voice-based [APRS](https://www.aprs.org/): Natural language APRS message sending/receiving (online only)
 *   Voice based weather reporting by location, using [OpenWeatherMap](https://openweathermap.org/). (online only, requires free API key)
 *   Voice based time and date checking. Works with time zones. (online and offline)
+*   Voice based Wikipedia lookups. (online only)
 *   Basic voice commands using regular expressions, like "status", "exit", "identify". (online and offline)
 
 Future versions will include AI rig, computer control, and features based on that, like offline voice APRS.
@@ -53,13 +54,14 @@ W6RGC/AI offers a range of features leveraging various AI technologies:
 *   **VoiceAPRS:** Send and receive APRS messages using natural language voice commands (requires internet).
 *   **Weather Information:** Get current weather and 3-day forecasts for any location using natural language voice commands (requires internet and OpenWeatherMap API key).
 *   **Time Zone Information:** Get current time and date for any timezone using natural language voice commands (defaults to Pacific Time if no timezone specified).
+*   **Wikipedia Information:** Get a summary of a Wikipedia article on a given topic using natural language (requires internet).
 *   **Basic Voice Commands:** Regex-based commands for "status," "exit," "reset," and "identify."
 
 **Core Technical Features:**
 *   **Efficient Wake Word Detection:** Uses MIT's AST (Audio Spectrogram Transformer) model.
 *   **High-Quality Speech Recognition:** Utilizes OpenAI Whisper.
 *   **Conversational AI:** Leverages modular LLMs (Online: Gemini, Offline: Ollama).
-*   **Natural Text-to-Speech:** Employs CoquiTTS with CUDA acceleration.
+*   **Natural Text-to-Speech:** Employs Piper TTS for fast, high-quality local voice generation.
 *   **Automatic Audio Device Detection:** For AIOC and Digirig adapters.
 *   **Modular Architecture:** Facilitates easy swapping of AI models, prompts, and hardware interfaces.
 *   **Centralized Configuration:** All settings managed via `constants.py`.
@@ -109,7 +111,7 @@ W6RGC/AI explores and leverages the following AI models in concert:
     - Uses [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
     - Example: "Voice APRS" sends and receive APRS messages using Natural Language Understanding.
     - A regular expression based system is available too 
-6.  **AI based text-to-speech** using [CoquiTTS](https://github.com/coqui-ai/TTS) to give the bot a voice
+6.  **AI based text-to-speech** using [Piper TTS](https://github.com/rhasspy/piper) to give the bot a voice
 
 ![Architecture Diagram](img/architecture.jpg)
 
@@ -124,6 +126,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
 - **`wake_word_detector.py`**: AST-based wake word detection system
 - **`periodically_identify.py`**: Handles periodic station identification
 - **`aprs_helper.py`**: APRS message sending/receiving via findu.com
+- **`wikipedia_helper.py`**: Fetches summaries from Wikipedia via its API.
 - **`speech_recognition.py`**: Whisper-based speech-to-text processing
 - **`llm_gemini_online.py`**: Google Gemini API integration with function calling
 - **`llm_ollama_offline.py`**: Local Ollama LLM integration for offline operation
@@ -217,8 +220,6 @@ To change the wake word, modify `BOT_NAME` or`DEFAULT_WAKE_WORD`in `constants.py
 ## Configuration
 
 The application uses a centralized configuration system through `constants.py`. Key configuration sections include:
-
-### AI/LLM Configuration
 ```python
 # Internet Connectivity and LLM Selection
 HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
