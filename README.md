@@ -3,79 +3,38 @@ AI is changing everything. [7?](https://en.wikipedia.org/wiki/Wire_signal) Are y
 
 ## Overview
 
-The W6RGC/AI project introduces Artificial Intelligence to amateur radio operations in the form of an AI ham radio operator and voice assistant named Seven W6RGC/AI. Seven has the ability to support human operators with a growing number of capabilities when Seven is operating with or without internet.
+W6RGC/AI brings the power of modern artificial intelligence to amateur radio through a voice assistant named "Seven." It acts as an AI co-pilot, designed to work both on and off the internet, turning your radio into a direct interface for advanced capabilities. Activate Seven with its name, then speak as you would to another operator.
 
-### Your ham radio is the user interface
+The project is designed for two main groups: radio operators who want an intelligent assistant on the air and developers who want a platform to experiment with AI and radio hardware.
 
-When on the air, activate Seven by saying "Seven" at the start of every transmission, pause for a second, and then start talking to Seven like you would with any operator. To learn more, ask Seven what its capable of. The experience is similar to Siri, Google Assistant, or Alexa.
+### For the Radio Operator: An AI Co-Pilot
 
-### Seven acts on your behalf
+Seven is trained on standard radio procedures to be a capable and helpful partner on the airwaves. It can:
 
-Seven has limited access to the internet and limited control of the computer its running on. "Tooling" is the process to provide this sort of access and ability to operators.
+*   **Handle QSOs:** Manage exchanges of call signs, names, locations, and signal reports.
+*   **Run Nets:** Serve as a net control station for simple nets, handling check-ins and maintaining a participant list.
+*   **Assist with ARES/RACES:** Transcribe and confirm messages using the FEMA ICS-213 format.
 
-Tools include:
-*   **[APRS](https://www.aprs.org/) messaging**: Natural language APRS message sending and receiving (online only)
-*   **Wikipedia**: Look up anything on Wikipedia, get a summary, and ask follow up questions about the topic. (online only)
-*   **GPS and grid square lookup**: Operator describes their location and receives an estimated GPS and grid square location (online only, requires a Google "Geocoding API" key)
-*   **Weather**: Reports current weather and 3 day forecast by location, using [OpenWeatherMap](https://openweathermap.org/). (online only, requires free API key)
-*   **Time**: Tells you the time and date in any time zone. (online and offline)
-*   **Regular expression based voice commands**: like "exit", "status", "identify". (online and offline)
+With natural voice commands, you can also access a growing set of internet-connected tools:
 
-Future versions will include AI rig control, more computer controls, and specifically, "offline" voice APRS messaging, beaconing, and digipeating.
+*   **VoiceAPRS:** Send and receive APRS messages just by talking.
+*   **Weather Reports:** Get current conditions and forecasts for any location.
+*   **Wikipedia Search:** Ask for a summary of any Wikipedia article.
+*   **Time and Location:** Get the current time for any timezone or find a Maidenhead grid square for any location.
 
-Vibe coders / No coders: Add your own tools! There is enough tooling context in the source code that IA programming tools can easily build whatever you imagine without any need for you to code.
+### For the Developer and Tinkerer: A Modular AI Playground
 
-### Seven is trained to help you
+This project is an open framework for experimenting with AI in real-world communication systems. It's built to be modified and extended.
 
-Seven is an AI bot. Therefore, it has cognitiion and can reason based and what you say on the air and what
-you "Train" the AI bot on.
+*   **Modular Architecture:** Easily swap core components like AI models, prompts, and hardware interfaces.
+*   **Flexible LLM Support:** Switch between online models like Google's Gemini for powerful, feature-rich operation and offline models via Ollama (e.g., Gemma, Llama 3) for grid-down or private use.
+*   **Extensible Tooling:** Add new voice-activated functions. The code provides clear examples for creating your own tools, whether through function-calling or regular expressions.
+*   **Open Source AI Stack:** The pipeline uses a combination of accessible models, including MIT-AST for wake-word detection, OpenAI Whisper for speech-to-text, and Piper TTS for natural speech generation.
+*   **Hardware Integration:** Includes out-of-the-box support for popular Digirig and AIOC radio interfaces.
 
-Using prompts, Seven is trained to perform the follow ham radio operations:
-*   **QSOs**: Performs QSOs (exchange call sign, name, location, and signal report with confirmation)
-*   **Net Control Station**: Runs simple nets (handle corrections, maintain list, count)
-*   **ARES Message Passing**: Transcribe and confirm [FEMA ICS-213](https://training.fema.gov/icsresource/icsforms.aspx) message passing
-*   **And generally a good ham radio operator**: Adhere to amateur radio [FCC Part 97](https://www.arrl.org/files/file/Regulatory/Part%2097%20-%20%2016%20Jan%202024.pdf) rules and regulations.
+Whether you are an emergency communicator exploring new tools or a developer curious about the intersection of AI and radio, W6RGC/AI offers a platform to learn, build, and innovate.
 
-What to start tinkering with prompts/training? The LLMs can be trained on any material. For example, I=if it turns out that "AI is the new electricity," then this app can be your "back up reasoning generator". Train it on all FEMA, ARES, and county documentation available and it'll be a FEMA/ARES/EOC expert.
-
-###Built to start tinkering now
-
-W6RGC/AI is modular for tinkering. One can change **any** of the AI models, update the prompts, and there is enough source code precedent to easily vibe code more functions.
-
-Offline mode allows you to run this as an AI backup system, for the day when AI becomes as a necessity as electricity and communication.
-
-Works with the [Digirig](https://digirig.net/) and [AIOC](https://github.com/skuep/AIOC) ham radio adapters.
-
-## Features
-
-W6RGC/AI offers a range of features leveraging various AI technologies:
-
-**Prompt-Based Features:**
-*   **Perform QSOs:** Exchange call sign, name, location, and signal reports with confirmation.
-*   **Run Simple Nets:** Handle check-ins, corrections, maintain a participant list, and provide counts.
-*   **FEMA ICS-213 Messaging:** Assist with passing and recording messages in the FEMA ICS-213 format.
-
-**Function-Based Features:**
-*   **VoiceAPRS:** Send and receive APRS messages using natural language voice commands (requires internet).
-*   **Weather Information:** Get current weather and 3-day forecasts for any location using natural language voice commands (requires internet and OpenWeatherMap API key).
-*   **Time Zone Information:** Get current time and date for any timezone using natural language voice commands (defaults to Pacific Time if no timezone specified).
-*   **Wikipedia Information:** Get a summary of a Wikipedia article on a given topic using natural language (requires internet).
-*   **GPS Coordinates:** Get the latitude, longitude, and Maidenhead grid square for a location based on a natural language description (requires internet and a Google Places API key).
-*   **Basic Voice Commands:** Regex-based commands for "status," "exit," "reset," and "identify."
-
-**Core Technical Features:**
-*   **Efficient Wake Word Detection:** Uses MIT's AST (Audio Spectrogram Transformer) model.
-*   **High-Quality Speech Recognition:** Utilizes OpenAI Whisper.
-*   **Conversational AI:** Leverages modular LLMs (Online: Gemini, Offline: Ollama).
-*   **Natural Text-to-Speech:** Employs Piper TTS for fast, high-quality local voice generation.
-*   **Automatic Audio Device Detection:** For AIOC and Digirig adapters.
-*   **Modular Architecture:** Facilitates easy swapping of AI models, prompts, and hardware interfaces.
-*   **Centralized Configuration:** All settings managed via `constants.py`.
-*   **PTT Control & Carrier Sense:** For controlled radio transmission.
-*   **Periodic Identification:** Automatic station ID.
-*   **Graceful Termination:** Via voice commands.
-
-### Voice APRS
+## Voice APRS Demo
 
 Voice APRS demonstrates the natural language APRS capabilities of W6RGC/AI, allowing operators to send and receive APRS messages using conversational voice commands.
 
@@ -99,54 +58,53 @@ Voice APRS demonstrates the natural language APRS capabilities of W6RGC/AI, allo
 
 W6RGC/AI explores and leverages the following AI models in concert:
 
-1.  **AI based wake word spotting** 
+1.  **AI-based wake word spotting** 
     - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2)
     -   Listens for "Seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal))
-    -   You can choose from over 35 not-so-good options
-2.  **AI based speech-to-text**
+    -   You can choose from over 35 other options
+2.  **AI-based speech-to-text**
     - Uses [OpenAI Whisper](https://github.com/openai/whisper) speech recognition
 3.  **Modular LLMs for the brains of the operation** 
-    - The current default uses online [Gemini](https://gemini.google.com/) "[gemini-2.5-flash-preview-05-20](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash)" and requires a developer key
-    - A one line change (`HAS_INTERNET`) switches to offline [Ollama](https://ollama.com/) model, like "[gemma3:12b](https://ollama.com/bsahane/gemma3:12b)"
+    - The current default uses the online [Gemini](https://gemini.google.com/) "[gemini-1.5-flash-preview-0514](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/1-5-flash)" model and requires a developer key
+    - A one-line change (`HAS_INTERNET`) switches to an offline [Ollama](https://ollama.com/) model, like "[gemma2:9b](https://ollama.com/library/gemma2)"
     - Plug in your own models and prompts!
 4.  **Ham radio prompts**. Example prompts for:
     - Performing QSOs
     - Running nets
     - Copying FEMA ICS-213 forms
-5.  **AI based tooling and function calling**
+5.  **AI-based tooling and function calling**
     - Uses [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
-    - Example: "Voice APRS" sends and receive APRS messages using Natural Language Understanding.
-    - A regular expression based system is available too 
-6.  **AI based text-to-speech** using [Piper TTS](https://github.com/rhasspy/piper) to give the bot a voice
+    - Example: "Voice APRS" sends and receives APRS messages using Natural Language Understanding.
+    - A regular expression-based system is also available 
+6.  **AI-based text-to-speech** using [Piper TTS](https://github.com/rhasspy/piper) to give the bot a voice
 
 ![Architecture Diagram](img/architecture.jpg)
 
 The code is designed for modularity, making it easy to swap and compare AI models, prompts, and function calling. The system is organized into several key modules:
 
 - **`main.py`**: Main application entry point and orchestration
-- **`constants.py`**: Centralized configuration management for all settings
-- **`regex_command_tooling.py`**: Command identification and parsing for voice commands (status, reset, identify, terminate)
-- **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware management
-- **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware management
-- **`context_manager.py`**: AI persona and conversation context management 
-- **`wake_word_detector.py`**: AST-based wake word detection system
+- **`constants.py`**: Centralized configuration for all settings
+- **`regex_command_tooling.py`**: Parses voice commands like status, reset, identify, and terminate
+- **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware
+- **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware
+- **`context_manager.py`**: Manages the AI's persona and conversation history
+- **`wake_word_detector.py`**: AST-based wake word detection
 - **`periodically_identify.py`**: Handles periodic station identification
-- **`aprs_helper.py`**: APRS message sending/receiving via findu.com
-- **`wikipedia_helper.py`**: Fetches summaries from Wikipedia via its API.
-- **`location_helper.py`**: Converts natural language location descriptions to GPS coordinates using Google Places API.
+- **`aprs_helper.py`**: Sends and receives APRS messages via findu.com
+- **`wikipedia_helper.py`**: Fetches article summaries from the Wikipedia API.
+- **`location_helper.py`**: Converts natural language location descriptions to GPS coordinates using the Google Places API.
 - **`speech_recognition.py`**: Whisper-based speech-to-text processing
-- **`llm_gemini_online.py`**: Google Gemini API integration with function calling
-- **`llm_ollama_offline.py`**: Local Ollama LLM integration for offline operation
+- **`llm_gemini_online.py`**: Integrates with the Google Gemini API, including function calling
+- **`llm_ollama_offline.py`**: Manages local LLM integration with Ollama for offline operation
 
 ## Setup and Installation
 
 ### Prerequisites
 
-*   **CUDA Hardware** For GPU acceleration. This project runs local LLMs and requires dedicated GPU hardware 
-    Minimally, a [Nvidia GeoForce RTX 3060](https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/) is required to run all these models.
-*   **Audio hardware with PTT**. Digirig and AIOC (All-In-One-Cable) are supported
-*   **Operating System:** This project only been tested on Linux
-*   **Required Linux Packages:** Install the following packages using apt:
+*   **CUDA Hardware:** For GPU acceleration, this project requires dedicated GPU hardware to run local AI models. A [Nvidia GeForce RTX 3060](https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/) or better is recommended.
+*   **Audio Hardware with PTT:** Digirig and AIOC (All-In-One-Cable) are supported.
+*   **Operating System:** This project has only been tested on Linux.
+*   **Required Linux Packages:** Install the following packages using your package manager:
     ```bash
     sudo apt update
     sudo apt install python3-full portaudio19-dev ffmpeg
@@ -160,7 +118,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
     ```bash
     curl -fsSL https://ollama.com/install.sh | sh
     ```
-    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma3:12b`).
+    After installation, ensure the Ollama service is running and you have pulled a model (e.g., `ollama pull gemma2:9b`).
 
 ### Installation Steps
 
@@ -180,7 +138,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
     ```
 4.  **Set up Ollama (if not done in prerequisites):**
     *   Ensure the Ollama server is running (usually `ollama serve` or `systemctl start ollama`)
-    *   If you haven't already, pull your desired LLM model (e.g., `ollama pull gemma3:12b`)
+    *   If you haven't already, pull your desired LLM model (e.g., `ollama pull gemma2:9b`)
 5.  **Hardware Setup:**
     *   Connect your AIOC or Digirig adapter via USB
     *   The system will automatically detect the audio device and serial port
@@ -189,16 +147,12 @@ The code is designed for modularity, making it easy to swap and compare AI model
 ## Usage
 
 1.  **Configure the application:**
-    *   **Primary Configuration**: Edit `constants.py` to modify all application settings:
-      - Audio processing parameters (thresholds, sample rates)
-      - Wake word selection (choose from 35+ available words)
-      - Hardware configuration (RIL type selection: AIOC or Digirig, serial ports)
-      - AI/LLM settings (Ollama URL, model selection)
-      - TTS configuration (models, audio settings)
-      - Bot identity (name, callsign, persona)
-      - Periodic identification interval
-    *   **Advanced Configuration**: Customize AI persona and prompts in `context_manager.py` and the prompt files
-    *   The system automatically detects AIOC/Digirig hardware, but you can manually set serial port in `constants.py`
+    *   **Primary Configuration**: Edit `constants.py` to modify a few settings:
+      - `BOT_CALLSIGN` and `BOT_PHONETIC_CALLSIGN`
+      - If you are using a Digirig, update `DEFAULT_DIGIRIG_SERIAL_PORT`. The system automatically detects the correct audio device for both AIOC and Digirig hardware.
+      - Some features may not work until you download the required models (e.g., Piper for TTS) or provide an API key (e.g., for weather reports).
+      - Explore the file for more settings to tinker with.
+    *   **Advanced Configuration**: Customize the AI persona and prompts in `context_manager.py`. You can also manually set the serial port in `constants.py` if auto-detection fails.
 
 2.  **Run the main script:**
     ```bash
@@ -218,26 +172,25 @@ To terminate the assistant: "Seven, break" or "Seven, exit" or use Ctrl+C in the
 The system uses MIT's AST (Audio Spectrogram Transformer) model for efficient wake word detection:
 
 - **35+ Available Wake Words:** backward, bed, bird, cat, dog, down, eight, five, follow, forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
-- **Current Default:** "seven" (I couldn't say "sheila" or "marvin" over and over again.)
-- **High Performance:** Very fast, low CPU usage, high accuracy
-- **CUDA Support:** GPU acceleration is required
+- **Current Default:** "seven"
+- **High Performance:** Fast, low CPU usage, and high accuracy
 
-To change the wake word, modify `BOT_NAME` or`DEFAULT_WAKE_WORD`in `constants.py` to any of the supported words. It's seems easier for the used and AI when `BOT_NAME` equals `DEFAULT_WAKE_WORD`.
+To change the wake word, modify `BOT_NAME` and `DEFAULT_WAKE_WORD` in `constants.py` to any of the supported words. It's easier for both the user and the AI when `BOT_NAME` matches the `DEFAULT_WAKE_WORD`.
 
 ## Configuration
 
-The application uses a centralized configuration system through `constants.py`. Key configuration sections include:
+The application uses a centralized configuration system in `constants.py`. Key sections include:
 ```python
 # Internet Connectivity and LLM Selection
 HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
 
 # Ollama Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_OFFLINE_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
+DEFAULT_OFFLINE_MODEL = "gemma2:9b"  # Example: "llama3:8b"
 
 # Gemini Configuration
 GEMINI_API_KEY_FILE = "gemini_api_key.txt"  # Store your Gemini API key in this file
-DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash-preview-05-20" # Example: "gemini-1.5-flash"
+DEFAULT_ONLINE_MODEL = "models/gemini-1.5-flash-preview-0514" # Example: "gemini-1.5-pro"
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
@@ -289,9 +242,9 @@ PERIODIC_ID_INTERVAL_MINUTES = 10  # minutes between automatic identification an
 ### Bot Identity
 ```python
 OPERATOR_NAME = "Operator"
-BOT_NAME = "seven" # Here are the following wake word / bot name options: seven (7), marvin , shiela, zero (0), happy, forward.
+BOT_NAME = "seven" # Choose from available wake words, e.g., seven, marvin, sheila, zero, happy, forward.
 BOT_CALLSIGN = "W6RGC/AI"      # Amateur radio callsign
-BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke I A"
+BOT_SPOKEN_CALLSIGN = "W 6 R G C stroke A I"
 BOT_PHONETIC_CALLSIGN = "Whiskey 6 Romeo Golf Charlie Stroke Alpha India"
 ```
 
@@ -311,7 +264,7 @@ TTS_INFERENCE_NOISE_SCALE_DP = 1.0
 TTS_INFERENCE_SIGMA = 1.0
 
 # TTS File Configuration
-TTS_OUTPUT_FILE = 'ollama_tts.wav'
+TTS_OUTPUT_FILE = 'audio/tts_output.wav'
 ```
 
 ## Advanced Features
@@ -320,7 +273,7 @@ TTS_OUTPUT_FILE = 'ollama_tts.wav'
 The system includes natural language APRS functionality through Gemini's function calling capabilities:
 
 - **Send APRS Messages**: "Seven, send an APRS message to N0CALL saying hello"
-- **Read APRS Messages**: "Seven, read my APRS messages" (requires your callsign)
+- **Read APRS Messages**: "Seven, read my APRS messages" (requires your callsign in `constants.py`)
 - **Integration**: Uses findu.com for APRS operations
 - **Requirements**: Internet connection and Gemini API access
 
@@ -342,11 +295,11 @@ The system provides comprehensive weather information through natural language v
 The system provides current time and date information for any timezone through natural language voice commands:
 
 - **Current Time**: "Seven, what time is it?" (defaults to Pacific Time)
-- **Specific Timezone**: "Seven, what time is it in Eastern?" or "Seven, what time is it in New York?"
+- **Specific Timezone**: "Seven, what time is it in Eastern?" or "Seven, what's the time in New York?"
 - **International Time**: "Seven, what time is it in London?" or "Seven, what time is it in Tokyo?"
 - **UTC/GMT Time**: "Seven, what's the current UTC time?"
-- **Format**: Time is displayed in 12-hour format without seconds, date without year
-- **Default**: Automatically defaults to Pacific Time if no timezone is specified
+- **Format**: Time is returned in 12-hour format without seconds, and the date is returned without the year.
+- **Default**: Automatically defaults to Pacific Time if no timezone is specified.
 
 **Example Voice Commands:**
 - "Seven, what time is it right now?"
@@ -364,8 +317,8 @@ Both AIOC and Digirig interfaces include carrier sense functionality:
 ### Periodic Identification  
 Automatic station identification every 10 minutes (configurable):
 - Announces the AI assistant and how to interact with it
-- Complies with amateur radio identification requirements
-- Timer resets after each transmission
+- Complies with FCC Part 97 identification requirements
+- The timer resets after each transmission
 
 ## Troubleshooting
 
@@ -378,24 +331,24 @@ Automatic station identification every 10 minutes (configurable):
 
 **Serial Port Issues:**
 - Check available serial ports: `ls /dev/ttyUSB* /dev/ttyACM*`
-- Update `DEFAULT_AIOC_SERIAL_PORT` or `DEFAULT_DIGIRIG_SERIAL_PORT` in `constants.py`
+- If auto-detection fails, update `DEFAULT_AIOC_SERIAL_PORT` or `DEFAULT_DIGIRIG_SERIAL_PORT` in `constants.py`
 - Verify permissions: `sudo chmod 666 /dev/ttyUSB0` (or relevant port)
 
 **Wake Word Not Detected:**
-- Check microphone levels and background noise
-- Adjust `AST_CONFIDENCE_THRESHOLD` in `constants.py`
-- Try different wake words: marvin, sheila, zero, happy, forward
+- Check microphone levels and background noise.
+- Adjust `AST_CONFIDENCE_THRESHOLD` in `constants.py`.
+- Try a different wake word, such as "marvin," "sheila," "zero," "happy," or "forward."
 
 **LLM Connection Issues:**
-- **Ollama**: Ensure service is running: `systemctl status ollama`
+- **Ollama**: Ensure the service is running: `systemctl status ollama`
 - **Gemini**: Check API key in `gemini_api_key.txt`
 - **Models**: Verify model availability: `ollama list` or test with `python list_gemini_models.py`
 
 **Weather Service Issues:**
 - **API Key**: Ensure valid OpenWeatherMap API key in `weather_api_key.txt`
 - **Internet**: Weather service requires internet connection
-- **Test**: Run `python weather_helper.py` to test weather functionality
-- **API Limits**: Free tier has usage limits; check your OpenWeatherMap dashboard
+- **Test**: Run `python weather_helper.py` to test functionality.
+- **API Limits**: The free tier has usage limits; check your OpenWeatherMap dashboard.
 
 Enable debug output for wake word detection:
 ```python
@@ -408,17 +361,17 @@ wake_detected = wake_detector.listen_for_wake_word(
 
 ## Hardware Requirements
 
-*   **Minimum:** CPU with 4+ cores, 32GB RAM, 10GB disk (not including ollama models)
-*   **GPU with CUDA support:** RTX3060 with 12GB RAM recommended for optimal performance
-*   **Radio interface:** AIOC (All-In-One-Cable) adapter, Digirig, or compatible USB audio interface
+*   **Minimum:** CPU with 4+ cores, 32GB RAM, and 10GB disk space (not including Ollama models)
+*   **GPU with CUDA support:** NVIDIA RTX 3060 with 12GB RAM recommended for optimal performance
+*   **Radio interface:** Digirig, AIOC (All-In-One-Cable), or other compatible USB audio interface with PTT control
 
 ## Testing and Development
 
 The project includes several testing utilities:
 
-- **Wake word testing**: Built-in debug modes in wake word detector
-- **Module testing**: Each module includes `if __name__ == "__main__"` test sections  
-- **Command testing**: Test voice command recognition with `regex_command_tooling.py`
+- **Wake word testing**: Use the built-in debug modes in the wake word detector.
+- **Module testing**: Each module includes a `if __name__ == "__main__"` block for direct testing.  
+- **Command testing**: Test voice command recognition with `regex_command_tooling.py`.
 
 To test individual components:
 ```bash
@@ -436,7 +389,7 @@ python test_time_integration.py       # Test time zone integration with Gemini
 
 ## License
 
-Copyright 2025 Rich Cannings
+Copyright 2024 Rich Cannings
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
