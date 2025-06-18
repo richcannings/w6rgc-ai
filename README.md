@@ -3,7 +3,7 @@ AI is changing everything. [7?](https://en.wikipedia.org/wiki/Wire_signal) Are y
 
 ## Overview
 
-W6RGC/AI brings the power of modern artificial intelligence to amateur radio through a voice assistant named "Seven." It acts as an AI co-pilot, designed to work both on and off the internet, turning your radio into a direct interface for advanced capabilities. Activate Seven with its name, then speak as you would to another operator.
+W6RGC/AI brings the power of modern artificial intelligence to amateur radio through a voice assistant named "Seven." It acts as an AI co-pilot, designed to work both on and off the internet, turning your radio into a direct interface for advanced capabilities. Activate Seven with its name, then speak as you would to another operator, like "Seven. This is W6RGC. Lets do a QSO." or "Seven. What are you good at?"
 
 The project is designed for two main groups: radio operators who want an intelligent assistant on the air and developers who want a platform to experiment with AI and radio hardware.
 
