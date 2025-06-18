@@ -3,9 +3,9 @@ AI is changing everything. [7?](https://en.wikipedia.org/wiki/Wire_signal) Are y
 
 ## Overview
 
-W6RGC/AI brings the power of modern artificial intelligence to amateur radio through a voice assistant named "Seven." It acts as an AI co-pilot, designed to work both on and off the internet, turning your radio into a direct interface for advanced capabilities. Activate Seven with its name, then speak as you would to another operator, like "Seven. This is W6RGC. Lets do a QSO." or "Seven. What are you good at?"
+W6RGC/AI brings the power of modern artificial intelligence to amateur radio through an AI ham operator and voice assistant named "Seven." It acts as an AI co-pilot, designed to work both on and off the internet, turning your radio into a direct interface for advanced capabilities. Activate Seven with its name, then speak as you would to another operator, like "Seven. This is W6RGC. Lets do a QSO." or "Seven. What are you good at?"
 
-The project is designed for two main groups: radio operators who want an intelligent assistant on the air and developers who want a platform to experiment with AI and radio hardware.
+The project is designed for two main groups: radio operators who want to experiment with an intelligent assistant on the air and developers who want a platform to experiment with AI and radio hardware.
 
 ### For the Radio Operator: An AI Co-Pilot
 
@@ -17,10 +17,11 @@ Seven is trained on standard radio procedures to be a capable and helpful partne
 
 With natural voice commands, you can also access a growing set of internet-connected tools:
 
-*   **VoiceAPRS:** Send and receive APRS messages just by talking.
-*   **Weather Reports:** Get current conditions and forecasts for any location.
+*   **Voice APRS:** Send and receive APRS messages just by talking.
+*   **Location identification:** Find a Maidenhead grid square and GPS coordinates for a location you describe.
 *   **Wikipedia Search:** Ask for a summary of any Wikipedia article.
-*   **Time and Location:** Get the current time for any timezone or find a Maidenhead grid square for any location.
+*   **Weather Reports:** Get current conditions and forecasts for any location.
+*   **Time and date:** Get the current time for any timezone
 
 ### For the Developer and Tinkerer: A Modular AI Playground
 
