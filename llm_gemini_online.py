@@ -55,6 +55,7 @@ from weather_helper import get_weather_forecast
 from time_helper import get_timezone_time
 from wikipedia_helper import get_wikipedia_summary
 from location_helper import get_gps_coordinates
+from arrl_news_helper import get_arrl_news_summary
 
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
@@ -223,6 +224,26 @@ get_wikipedia_summary_func = FunctionDeclaration(
     }
 )
 
+# Define the ARRL news tool
+get_arrl_news_func = FunctionDeclaration(
+    name="get_arrl_news",
+    description=(
+        "Fetches and summarizes the latest ARRL news from Amateur Radio Newsline. "
+        "Use this when the operator asks for ARRL news, ham radio news, or news about amateur radio. "
+        "This function returns a summary of the most recent news headlines and stories."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "max_headlines": {
+                "type": "integer",
+                "description": "Maximum number of headlines to include in the summary (default: 5, max: 10)."
+            }
+        },
+        "required": []  # max_headlines is optional, defaults to 5
+    }
+)
+
 # Define the GPS tool
 get_gps_coordinates_func = FunctionDeclaration(
     name="get_gps_coordinates",
@@ -249,6 +270,7 @@ ai_tools = Tool(function_declarations=[
     get_weather_forecast_func,
     get_timezone_time_func,
     get_wikipedia_summary_func,
+    get_arrl_news_func,
     get_gps_coordinates_func
 ])
 
@@ -442,6 +464,22 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                     except Exception as e:
                         print(f"❌ Error calling get_wikipedia_summary for {topic}: {e}")
                         return f"An error occurred while trying to get information for {topic} from Wikipedia: {str(e)}"
+                
+                elif fc.name == "get_arrl_news":
+                    print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")
+                    
+                    max_headlines = fc.args.get("max_headlines", 5)  # Default to 5 if not specified
+
+                    try:
+                        print(f"📰 Calling arrl_news_helper.get_arrl_news_summary for max_headlines: {max_headlines}")
+                        news_summary = get_arrl_news_summary(max_headlines)
+                        print(f"📰 ARRL news summary received for {max_headlines} headlines: {news_summary[:100]}...") # Log snippet
+                        
+                        return f"TTS_DIRECT:{news_summary}"
+                        
+                    except Exception as e:
+                        print(f"❌ Error calling get_arrl_news_summary for {max_headlines} headlines: {e}")
+                        return f"An error occurred while trying to get ARRL news: {str(e)}"
                 
                 elif fc.name == "get_gps_coordinates":
                     print(f"🛠️ Gemini requested to call function: {fc.name} with args: {fc.args}")

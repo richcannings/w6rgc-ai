@@ -18,6 +18,7 @@ Seven is trained on standard radio procedures to be a capable and helpful partne
 With natural voice commands, you can also access a growing set of internet-connected tools:
 
 *   **Voice APRS:** Send and receive APRS messages just by talking.
+*   **ARRL News:** Get the latest amateur radio news headlines from ARNewsline.
 *   **Location identification:** Find a Maidenhead grid square and GPS coordinates for a location you describe.
 *   **Wikipedia Search:** Ask for a summary of any Wikipedia article.
 *   **Weather Reports:** Get current conditions and forecasts for any location.
@@ -92,6 +93,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
 - **`wake_word_detector.py`**: AST-based wake word detection
 - **`periodically_identify.py`**: Handles periodic station identification
 - **`aprs_helper.py`**: Sends and receives APRS messages via findu.com
+- **`arrl_news_helper.py`**: Fetches and summarizes the latest ARRL news from ARNewsline.
 - **`wikipedia_helper.py`**: Fetches article summaries from the Wikipedia API.
 - **`location_helper.py`**: Converts natural language location descriptions to GPS coordinates using the Google Places API.
 - **`speech_recognition.py`**: Whisper-based speech-to-text processing
@@ -278,6 +280,14 @@ The system includes natural language APRS functionality through Gemini's functio
 - **Integration**: Uses findu.com for APRS operations
 - **Requirements**: Internet connection and Gemini API access
 
+### ARRL News (Function Calling)
+Get the latest amateur radio news headlines from ARNewsline.org:
+
+- **Voice Commands**: "Seven, what's the latest ARRL news?" or "Seven, get me the ham radio news"
+- **Features**: Returns the most recent news report with headlines, cached for 5 minutes
+- **Requirements**: Internet connection and Gemini API access
+- **Integration**: Uses ARNewsline.org for current amateur radio news
+
 ### Weather Information (Function Calling)
 The system provides comprehensive weather information through natural language voice commands:
 
@@ -386,6 +396,7 @@ python weather_helper.py              # Test weather API functionality
 python test_weather_integration.py    # Test weather integration with Gemini
 python time_helper.py                 # Test time zone functionality
 python test_time_integration.py       # Test time zone integration with Gemini
+python test_arrl_news.py              # Test ARRL news functionality
 ```
 
 ## License
