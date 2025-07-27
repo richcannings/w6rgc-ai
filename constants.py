@@ -81,7 +81,8 @@ MAX_COMMAND_WORDS = 10  # maximum words to check for commands (prevents accident
 # Audio Channels
 DEFAULT_AUDIO_CHANNELS = 1  # Mono audio
 
-# Audio Level Monitoring
+# Improve speech recognition with audio level monitoring
+# Once tuned, this can be set to False to reduce user perceived latency.
 # Real-time analysis of audio input levels with automatic gain recommendations.
 # When enabled, displays peak/RMS levels, detects clipping, and suggests input gain adjustments.
 # Set to False to disable all audio level monitoring and related output.
