@@ -122,18 +122,23 @@ from constants import (
     DEFAULT_WAKE_WORD,
     DETECT_TRANSMISSION_BEFORE_WAKE_WORD,
     AST_CONFIDENCE_THRESHOLD,
-    AST_CHUNK_LENGTH_S
+    AST_CHUNK_LENGTH_S,
+    
+    # Audio level monitoring
+    ENABLE_AUDIO_LEVEL_MONITORING
 )
 
 ### HELPER CLASSES AND FUNCTIONS ###
 
 def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_engine, audio_index, wake_word_timeout=5, max_recording_duration=60):
     """
-    Parallel wake word detection and speech recognition with audio level monitoring.
+    Parallel wake word detection and speech recognition with optional audio level monitoring.
     
     Both processes start simultaneously and share the same audio stream.
     If wake word is detected, speech recognition result is returned.
     If wake word is not detected, returns None for both.
+    
+    Audio level monitoring can be enabled/disabled via ENABLE_AUDIO_LEVEL_MONITORING constant.
     
     Args:
         wake_detector: Wake word detector instance
@@ -147,8 +152,8 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
     """
     print(f"🎤 Starting parallel wake word detection and speech recognition...")
     
-    # Initialize audio level monitor
-    audio_monitor = AudioLevelMonitor()
+    # Initialize audio level monitor (if enabled)
+    audio_monitor = AudioLevelMonitor() if ENABLE_AUDIO_LEVEL_MONITORING else None
     
     # Shared state between threads
     wake_detected = threading.Event()
@@ -302,8 +307,9 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
                         if speech_started:
                             full_speech_recording.extend(frame)
                         
-                        # Monitor audio levels during continued recording
-                        audio_monitor.add_frame(frame)
+                        # Monitor audio levels during continued recording (if enabled)
+                        if audio_monitor:
+                            audio_monitor.add_frame(frame)
                         
                         # Check max recording duration again during continued recording
                         if recording_start_time and (time.time() - recording_start_time) > max_recording_duration:
@@ -319,12 +325,13 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
                 frame, _ = stream.read(int(FRAME_DURATION * samplerate))
                 frame = np.squeeze(frame)
                 
-                # Monitor audio levels
-                audio_monitor.add_frame(frame)
+                # Monitor audio levels (if enabled)
+                if audio_monitor:
+                    audio_monitor.add_frame(frame)
                 frame_counter += 1
                 
-                # Show instantaneous levels periodically
-                if frame_counter % 20 == 0:  # Every 2 seconds (20 frames * 0.1s)
+                # Show instantaneous levels periodically (if enabled)
+                if ENABLE_AUDIO_LEVEL_MONITORING and frame_counter % 20 == 0:  # Every 2 seconds (20 frames * 0.1s)
                     peak = np.max(np.abs(frame))
                     rms = np.sqrt(np.mean(frame**2))
                     if wake_detected.is_set() and recording_start_time:
@@ -355,13 +362,14 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
         wake_thread.join(timeout=1.0)
         speech_thread.join(timeout=1.0)
         
-        # Final audio level report
-        stats = audio_monitor.get_current_stats()
-        if stats:
-            print(f"📊 Final Audio Statistics:")
-            print(f"   Processed {stats['frame_count']} frames")
-            print(f"   Peak: avg={stats['avg_peak']:.3f}, max={stats['max_peak']:.3f}")
-            print(f"   RMS:  avg={stats['avg_rms']:.3f}, max={stats['max_rms']:.3f}")
+        # Final audio level report (if enabled)
+        if audio_monitor:
+            stats = audio_monitor.get_current_stats()
+            if stats:
+                print(f"📊 Final Audio Statistics:")
+                print(f"   Processed {stats['frame_count']} frames")
+                print(f"   Peak: avg={stats['avg_peak']:.3f}, max={stats['max_peak']:.3f}")
+                print(f"   RMS:  avg={stats['avg_rms']:.3f}, max={stats['max_rms']:.3f}")
     
     # Process speech recognition if wake word was detected
     if wake_word_found:
@@ -377,8 +385,8 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
             
             print(f"📝 Audio data: {len(audio)} samples, duration: {len(audio)/samplerate:.2f}s")
             
-            # Final audio level analysis for the speech segment
-            if len(audio) > 0:
+            # Final audio level analysis for the speech segment (if enabled)
+            if ENABLE_AUDIO_LEVEL_MONITORING and len(audio) > 0:
                 speech_peak = np.max(np.abs(audio))
                 speech_rms = np.sqrt(np.mean(audio**2))
                 print(f"📝 Speech segment levels: peak={speech_peak:.3f}, rms={speech_rms:.3f}")
@@ -598,6 +606,7 @@ if HAS_INTERNET:
 else:
     print(f"AI model: {DEFAULT_OFFLINE_MODEL} (offline)")
 print(f"Text-to-speech: {tts_engine.model_name}")
+print(f"Audio level monitoring: {'Enabled' if ENABLE_AUDIO_LEVEL_MONITORING else 'Disabled'}")
 print("=" * 50)
 
 ### MAIN LOOP ###
