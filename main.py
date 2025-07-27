@@ -61,6 +61,10 @@
 import numpy as np
 import time
 import gc
+import threading
+import sounddevice as sd
+import librosa
+from scipy.signal import resample
 from TTS.api import TTS as CoquiTTS
 from piper.voice import PiperVoice
 
@@ -84,6 +88,10 @@ from constants import (
     
     # Speech recognition configuration
     WHISPER_MODEL,
+    AUDIO_THRESHOLD,
+    FRAME_DURATION,
+    SILENCE_DURATION,
+    WHISPER_TARGET_SAMPLE_RATE,
     
     # AI/LLM configuration
     HAS_INTERNET,
@@ -111,7 +119,9 @@ from constants import (
     WAKE_WORD_METHOD_AST,
     AST_MODEL_NAME,
     DEFAULT_WAKE_WORD,
-    DETECT_TRANSMISSION_BEFORE_WAKE_WORD
+    DETECT_TRANSMISSION_BEFORE_WAKE_WORD,
+    AST_CONFIDENCE_THRESHOLD,
+    AST_CHUNK_LENGTH_S
 )
 
 ### HELPER CLASSES AND FUNCTIONS ###
@@ -142,6 +152,223 @@ class PiperTTSWrapper:
             audio_array /= np.iinfo(np.int16).max
         
         return audio_array
+
+def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_engine, audio_index, duration=5):
+    """
+    Parallel wake word detection and speech recognition.
+    
+    Both processes start simultaneously and share the same audio stream.
+    If wake word is detected, speech recognition result is returned.
+    If wake word is not detected, returns None for both.
+    
+    Args:
+        wake_detector: Wake word detector instance
+        speech_recognition_engine: Speech recognition engine instance
+        audio_index: Audio device index
+        duration: Maximum duration to listen for wake word (seconds)
+        
+    Returns:
+        tuple: (wake_detected: bool, transcribed_text: str or None)
+    """
+    print(f"🎤 Starting parallel wake word detection and speech recognition...")
+    
+    # Shared state between threads
+    wake_detected = threading.Event()
+    speech_complete = threading.Event()
+    stop_recording = threading.Event()
+    
+    # Results
+    transcribed_text = None
+    wake_word_found = False
+    
+    # Get stream parameters from RIL
+    stream_params = speech_recognition_engine.ril_interface.get_input_stream_params()
+    samplerate = stream_params['samplerate']
+    
+    # Audio buffers for both processes
+    wake_word_buffer = []
+    speech_buffer = []
+    full_speech_recording = []  # Preserve all speech audio for final transcription
+    speech_started = False
+    silence_counter = 0
+    
+    def wake_word_thread():
+        """Thread for wake word detection"""
+        nonlocal wake_word_found
+        
+        # Calculate chunk size for wake word detection
+        chunk_samples = int(AST_CHUNK_LENGTH_S * samplerate)
+        wake_word_model_sample_rate = wake_detector.model_sample_rate
+        
+        print(f"🎯 Wake word thread started (listening for '{DEFAULT_WAKE_WORD}')")
+        
+        while not stop_recording.is_set() and not wake_detected.is_set():
+            if len(wake_word_buffer) >= chunk_samples:
+                # Extract chunk for analysis
+                audio_chunk = np.array(wake_word_buffer[:chunk_samples])
+                wake_word_buffer[:] = wake_word_buffer[chunk_samples:]  # Remove processed samples
+                
+                # Resample if needed
+                if samplerate != wake_word_model_sample_rate:
+                    audio_chunk = librosa.resample(audio_chunk, 
+                                                 orig_sr=samplerate, 
+                                                 target_sr=wake_word_model_sample_rate)
+                
+                # Run classification
+                try:
+                    prediction = wake_detector.classifier(audio_chunk, sampling_rate=wake_word_model_sample_rate)
+                    if isinstance(prediction, list) and len(prediction) > 0:
+                        prediction = prediction[0]  # Get top prediction
+                    
+                    # Check if wake word detected with sufficient confidence
+                    if (prediction["label"].lower() == wake_detector.wake_word and 
+                        prediction["score"] > AST_CONFIDENCE_THRESHOLD):
+                        
+                        print(f"🎯 Wake word '{DEFAULT_WAKE_WORD}' detected! (confidence: {prediction['score']:.3f})")
+                        wake_word_found = True
+                        wake_detected.set()
+                        return
+                        
+                except Exception as e:
+                    print(f"❌ Wake word detection error: {e}")
+            else:
+                time.sleep(0.01)  # Small delay to prevent busy waiting
+        
+        print("🎯 Wake word thread finished")
+    
+    def speech_recognition_thread():
+        """Thread for speech recognition"""
+        nonlocal transcribed_text, speech_started, silence_counter
+        
+        print("📝 Speech recognition thread started")
+        
+        while not stop_recording.is_set():
+            if len(speech_buffer) >= int(FRAME_DURATION * samplerate):
+                # Extract frame for speech detection
+                frame_samples = int(FRAME_DURATION * samplerate)
+                frame = np.array(speech_buffer[:frame_samples])
+                
+                # Always preserve speech audio in full_speech_recording when we have speech
+                if speech_started or np.max(np.abs(frame)) > AUDIO_THRESHOLD:
+                    full_speech_recording.extend(frame)
+                
+                speech_buffer[:] = speech_buffer[frame_samples:]  # Remove processed samples
+                
+                amplitude = np.max(np.abs(frame))
+                
+                if amplitude > AUDIO_THRESHOLD:
+                    if not speech_started:
+                        print("🗣️  Speech detected, recording...")
+                        speech_started = True
+                    silence_counter = 0
+                elif speech_started:
+                    silence_counter += FRAME_DURATION
+                    if silence_counter >= SILENCE_DURATION:
+                        print("🔇 Silence detected, processing...")
+                        speech_complete.set()
+                        break
+            else:
+                time.sleep(0.01)  # Small delay to prevent busy waiting
+        
+        print("📝 Speech recognition thread finished")
+    
+    # Reset audio device
+    speech_recognition_engine.ril_interface.reset_audio_device()
+    
+    # Start both threads
+    wake_thread = threading.Thread(target=wake_word_thread, daemon=True)
+    speech_thread = threading.Thread(target=speech_recognition_thread, daemon=True)
+    
+    start_time = time.time()
+    
+    try:
+        wake_thread.start()
+        speech_thread.start()
+        
+        # Main audio capture loop
+        with sd.InputStream(**stream_params) as stream:
+            while True:
+                # Check timeout
+                if time.time() - start_time > duration:
+                    print(f"⌛ Timeout: Did not detect '{DEFAULT_WAKE_WORD}' within {duration} seconds.")
+                    stop_recording.set()
+                    break
+                
+                # Check if wake word was detected
+                if wake_detected.is_set():
+                    print("✅ Wake word detected, continuing speech recognition...")
+                    # Continue recording until speech is complete
+                    while not speech_complete.is_set() and not stop_recording.is_set():
+                        frame, _ = stream.read(int(FRAME_DURATION * samplerate))
+                        frame = np.squeeze(frame)
+                        speech_buffer.extend(frame)
+                        # Also preserve for final transcription
+                        if speech_started:
+                            full_speech_recording.extend(frame)
+                        time.sleep(0.01)
+                    break
+                
+                # Read audio and feed to both buffers
+                frame, _ = stream.read(int(FRAME_DURATION * samplerate))
+                frame = np.squeeze(frame)
+                
+                # Feed to both buffers
+                wake_word_buffer.extend(frame)
+                speech_buffer.extend(frame)
+                
+                # Also preserve speech audio if we detect speech activity
+                amplitude = np.max(np.abs(frame))
+                if speech_started or amplitude > AUDIO_THRESHOLD:
+                    full_speech_recording.extend(frame)
+                    if not speech_started and amplitude > AUDIO_THRESHOLD:
+                        speech_started = True
+                        print(f"🗣️  Main loop: Speech detected (amplitude: {amplitude:.3f})")
+    
+    except Exception as e:
+        print(f"❌ Audio capture error: {e}")
+        stop_recording.set()
+    
+    finally:
+        # Ensure threads complete
+        stop_recording.set()
+        wake_thread.join(timeout=1.0)
+        speech_thread.join(timeout=1.0)
+    
+    # Process speech recognition if wake word was detected
+    if wake_word_found:
+        print(f"📝 Processing recorded speech... (speech_started: {speech_started}, buffer size: {len(full_speech_recording)} samples)")
+        
+        # Reconstruct the full audio from the complete recording
+        if full_speech_recording:
+            audio = np.array(full_speech_recording)
+            if audio.ndim > 1:
+                audio = audio[:, 0]
+            
+            print(f"📝 Audio data: {len(audio)} samples, duration: {len(audio)/samplerate:.2f}s")
+            
+            # Resample if needed for Whisper
+            if samplerate != WHISPER_TARGET_SAMPLE_RATE:
+                num_samples = int(len(audio) * WHISPER_TARGET_SAMPLE_RATE / samplerate)
+                audio = resample(audio, num_samples)
+                print(f"📝 Resampled to: {len(audio)} samples for Whisper")
+            
+            # Transcribe with Whisper
+            try:
+                print("📝 Transcribing with Whisper...")
+                result = speech_recognition_engine.model.transcribe(audio, fp16=True, language='en')
+                transcribed_text = result['text'].strip()
+                print(f"📝 Transcribed: '{transcribed_text}'")
+            except Exception as e:
+                print(f"❌ Transcription error: {e}")
+                transcribed_text = ""
+        else:
+            print(f"❌ No speech audio to process (speech_started: {speech_started}, buffer_size: {len(full_speech_recording)})")
+            transcribed_text = ""
+    else:
+        # Wake word not found, no transcription
+        transcribed_text = None
+    
+    return wake_word_found, transcribed_text
 
 def create_tts_engine():
     """
@@ -350,13 +577,13 @@ while True:
             print("🎤 New transmission detected.")
             # At this point, a transmission has started on a previously clear channel.
             
-        # STEP 1: Wait for wake word detection
-        print(f"🎤 Transmission detected. Listening for wake word '{DEFAULT_WAKE_WORD}'...")
-        # AST detector listens and returns when the wake word was detected
-        wake_detected = wake_detector.listen_for_wake_word(
-            audio_device_index=audio_index,
-            duration=5, # Listen for 5 seconds for the wake word 
-            debug=False
+        # STEP 1: Parallel wake word detection and speech recognition
+        print(f"🎤 Transmission detected. Starting parallel wake word detection and speech recognition...")
+        wake_detected, operator_text = parallel_wake_word_and_speech_recognition(
+            wake_detector=wake_detector,
+            speech_recognition_engine=speech_recognition_engine,
+            audio_index=audio_index,
+            duration=5 # Listen for 5 seconds for the wake word 
         )
         
         if not wake_detected:
@@ -366,13 +593,19 @@ while True:
         # Step 2a: Transmit a tone, notifying the operator that the chatbot copied their messsage.
         # TODO(richc): Kick off a thread to play notification audio clip to notify the user that 
         # the bot got the message. Tried. There is a delay... Just as much as it takes for the 
-        # chatbot to respond. I may dive int it later. I may need to implement a queue for the ril.
+        # chatbot to response. I may dive int it later. I may need to implement a queue for the ril.
 
-        # STEP 2: Transcribe the audio to text
-        print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Now listening for your command...")
-        operator_text = speech_recognition_engine.get_full_command_after_wake_word()
+        print(f"✅ Wake word '{DEFAULT_WAKE_WORD}' detected! Speech recognition completed.")
         
-        # STEP 3: Process the operator's input (Assumes the wake word is the same as the bots name.)
+        # Validate transcription result
+        if operator_text is None:
+            print("❌ Transcription failed. Restarting loop.")
+            continue
+        elif operator_text.strip() == "":
+            print("❌ No speech detected after wake word. Restarting loop.")
+            continue
+        
+        # STEP 2: Process the operator's input (Assumes the wake word is the same as the bots name.)
 
         # This is a hack to get the wake word detector to pass the name of the bot, so the bot
         # receives the entire transmission. This may or may not be valuable.
@@ -412,7 +645,7 @@ while True:
                            tts_engine, ril)
             continue
         else:
-            # STEP 4: If no command was handled, proceed with conversation between the operator and the bot
+            # STEP 3: If no command was handled, proceed with conversation between the operator and the bot
             print(f"💬 Conversation request detected")
             
             # Add the operator's request to the context
@@ -443,7 +676,7 @@ while True:
             # add the AI's response to the context
             context_mgr.add_ai_response_to_context(ai_response)
             
-            # STEP 5: Speak response
+            # STEP 4: Speak response
             print("🔊 Speaking response...")
             play_tts_audio(ai_response, tts_engine, ril)
             periodic_identifier.restart_timer()
