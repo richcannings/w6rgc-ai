@@ -119,7 +119,8 @@ DEFAULT_OFFLINE_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
 
 # Gemini Configuration (online)
 GEMINI_API_KEY_FILE = "gemini_api_key.txt"
-DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash-preview-05-20" # "gemini-1.5-flash" 
+# DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash-preview-05-20" # Previous preview version
+DEFAULT_ONLINE_MODEL = "models/gemini-2.5-flash"  # Recommended: Best balance of speed, intelligence, and cost
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
