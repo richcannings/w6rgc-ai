@@ -66,7 +66,6 @@ import sounddevice as sd
 import librosa
 from scipy.signal import resample
 from TTS.api import TTS as CoquiTTS
-from piper.voice import PiperVoice
 
 # modules part of the w6rgc/ai project
 import wake_word_detector
@@ -78,6 +77,8 @@ from ril_digirig import RadioInterfaceLayerDigiRig
 from periodically_identify import PeriodicIdentifier
 from llm_gemini_online import ask_gemini
 from llm_ollama_offline import ask_ollama
+from piper_tts_wrapper import PiperTTSWrapper
+from audio_level_monitor import AudioLevelMonitor
 
 ### CONSTANTS ###
 
@@ -126,36 +127,9 @@ from constants import (
 
 ### HELPER CLASSES AND FUNCTIONS ###
 
-class PiperTTSWrapper:
-    """A wrapper for PiperTTS to make it API-compatible with CoquiTTS."""
-    def __init__(self, model_path):
-        # Piper models are specified by a path to the .onnx file
-        self.voice = PiperVoice.load(model_path)
-        # Create a dummy synthesizer object to hold the sample rate
-        class Synthesizer:
-            def __init__(self, sample_rate):
-                self.output_sample_rate = sample_rate
-        self.synthesizer = Synthesizer(self.voice.config.sample_rate)
-        self.model_name = model_path
-
-    def tts(self, text, **kwargs):
-        """Synthesize text to speech and return as a numpy array."""
-        # Use synthesize_stream_raw to get audio data in memory
-        wav_bytes_stream = self.voice.synthesize_stream_raw(text)
-        wav_bytes = b"".join(wav_bytes_stream)
-
-        # Convert bytes to a numpy array of floats
-        audio_array = np.frombuffer(wav_bytes, dtype=np.int16).astype(np.float32)
-        
-        # Normalize to [-1, 1] range to be compatible with Coqui output
-        if np.max(np.abs(audio_array)) > 0:
-            audio_array /= np.iinfo(np.int16).max
-        
-        return audio_array
-
-def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_engine, audio_index, duration=5):
+def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_engine, audio_index, wake_word_timeout=5, max_recording_duration=60):
     """
-    Parallel wake word detection and speech recognition.
+    Parallel wake word detection and speech recognition with audio level monitoring.
     
     Both processes start simultaneously and share the same audio stream.
     If wake word is detected, speech recognition result is returned.
@@ -165,12 +139,16 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
         wake_detector: Wake word detector instance
         speech_recognition_engine: Speech recognition engine instance
         audio_index: Audio device index
-        duration: Maximum duration to listen for wake word (seconds)
+        wake_word_timeout: Maximum duration to listen for wake word (seconds)
+        max_recording_duration: Maximum total recording duration (seconds)
         
     Returns:
         tuple: (wake_detected: bool, transcribed_text: str or None)
     """
     print(f"🎤 Starting parallel wake word detection and speech recognition...")
+    
+    # Initialize audio level monitor
+    audio_monitor = AudioLevelMonitor()
     
     # Shared state between threads
     wake_detected = threading.Event()
@@ -180,6 +158,7 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
     # Results
     transcribed_text = None
     wake_word_found = False
+    recording_start_time = None  # Track when recording actually starts
     
     # Get stream parameters from RIL
     stream_params = speech_recognition_engine.ril_interface.get_input_stream_params()
@@ -242,6 +221,9 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
         
         print("📝 Speech recognition thread started")
         
+        # Use longer silence duration for extended conversations
+        extended_silence_duration = 3.0  # 3 seconds of silence for longer conversations
+        
         while not stop_recording.is_set():
             if len(speech_buffer) >= int(FRAME_DURATION * samplerate):
                 # Extract frame for speech detection
@@ -263,8 +245,9 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
                     silence_counter = 0
                 elif speech_started:
                     silence_counter += FRAME_DURATION
-                    if silence_counter >= SILENCE_DURATION:
-                        print("🔇 Silence detected, processing...")
+                    # Use longer silence duration for extended conversations
+                    if silence_counter >= extended_silence_duration:
+                        print(f"🔇 Extended silence detected ({extended_silence_duration}s), processing...")
                         speech_complete.set()
                         break
             else:
@@ -285,18 +268,31 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
         wake_thread.start()
         speech_thread.start()
         
-        # Main audio capture loop
+        # Main audio capture loop with level monitoring
         with sd.InputStream(**stream_params) as stream:
+            frame_counter = 0
             while True:
-                # Check timeout
-                if time.time() - start_time > duration:
-                    print(f"⌛ Timeout: Did not detect '{DEFAULT_WAKE_WORD}' within {duration} seconds.")
+                elapsed_time = time.time() - start_time
+                
+                # Check wake word timeout (only before wake word is detected)
+                if not wake_detected.is_set() and elapsed_time > wake_word_timeout:
+                    print(f"⌛ Timeout: Did not detect '{DEFAULT_WAKE_WORD}' within {wake_word_timeout} seconds.")
                     stop_recording.set()
                     break
                 
                 # Check if wake word was detected
                 if wake_detected.is_set():
-                    print("✅ Wake word detected, continuing speech recognition...")
+                    if recording_start_time is None:
+                        recording_start_time = time.time()
+                        print("✅ Wake word detected, continuing speech recognition...")
+                    
+                    # Check maximum recording duration
+                    if recording_start_time and (time.time() - recording_start_time) > max_recording_duration:
+                        print(f"⌛ Maximum recording duration ({max_recording_duration}s) reached. Processing...")
+                        stop_recording.set()
+                        speech_complete.set()
+                        break
+                    
                     # Continue recording until speech is complete
                     while not speech_complete.is_set() and not stop_recording.is_set():
                         frame, _ = stream.read(int(FRAME_DURATION * samplerate))
@@ -305,12 +301,37 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
                         # Also preserve for final transcription
                         if speech_started:
                             full_speech_recording.extend(frame)
+                        
+                        # Monitor audio levels during continued recording
+                        audio_monitor.add_frame(frame)
+                        
+                        # Check max recording duration again during continued recording
+                        if recording_start_time and (time.time() - recording_start_time) > max_recording_duration:
+                            print(f"⌛ Maximum recording duration ({max_recording_duration}s) reached during continued recording.")
+                            stop_recording.set()
+                            speech_complete.set()
+                            break
+                        
                         time.sleep(0.01)
                     break
                 
                 # Read audio and feed to both buffers
                 frame, _ = stream.read(int(FRAME_DURATION * samplerate))
                 frame = np.squeeze(frame)
+                
+                # Monitor audio levels
+                audio_monitor.add_frame(frame)
+                frame_counter += 1
+                
+                # Show instantaneous levels periodically
+                if frame_counter % 20 == 0:  # Every 2 seconds (20 frames * 0.1s)
+                    peak = np.max(np.abs(frame))
+                    rms = np.sqrt(np.mean(frame**2))
+                    if wake_detected.is_set() and recording_start_time:
+                        recording_duration = time.time() - recording_start_time
+                        print(f"🔊 Recording {recording_duration:.1f}s | levels: peak={peak:.3f}, rms={rms:.3f}, threshold={AUDIO_THRESHOLD:.3f}")
+                    else:
+                        print(f"🔊 Instant levels: peak={peak:.3f}, rms={rms:.3f}, threshold={AUDIO_THRESHOLD:.3f}")
                 
                 # Feed to both buffers
                 wake_word_buffer.extend(frame)
@@ -333,10 +354,20 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
         stop_recording.set()
         wake_thread.join(timeout=1.0)
         speech_thread.join(timeout=1.0)
+        
+        # Final audio level report
+        stats = audio_monitor.get_current_stats()
+        if stats:
+            print(f"📊 Final Audio Statistics:")
+            print(f"   Processed {stats['frame_count']} frames")
+            print(f"   Peak: avg={stats['avg_peak']:.3f}, max={stats['max_peak']:.3f}")
+            print(f"   RMS:  avg={stats['avg_rms']:.3f}, max={stats['max_rms']:.3f}")
     
     # Process speech recognition if wake word was detected
     if wake_word_found:
+        total_recording_time = (time.time() - recording_start_time) if recording_start_time else 0
         print(f"📝 Processing recorded speech... (speech_started: {speech_started}, buffer size: {len(full_speech_recording)} samples)")
+        print(f"📝 Total recording time: {total_recording_time:.1f} seconds")
         
         # Reconstruct the full audio from the complete recording
         if full_speech_recording:
@@ -345,6 +376,17 @@ def parallel_wake_word_and_speech_recognition(wake_detector, speech_recognition_
                 audio = audio[:, 0]
             
             print(f"📝 Audio data: {len(audio)} samples, duration: {len(audio)/samplerate:.2f}s")
+            
+            # Final audio level analysis for the speech segment
+            if len(audio) > 0:
+                speech_peak = np.max(np.abs(audio))
+                speech_rms = np.sqrt(np.mean(audio**2))
+                print(f"📝 Speech segment levels: peak={speech_peak:.3f}, rms={speech_rms:.3f}")
+                
+                if speech_peak < 0.05:
+                    print("⚠️  Speech segment very quiet - consider increasing input gain")
+                elif speech_peak > 0.95:
+                    print("⚠️  Speech segment clipping detected - consider decreasing input gain")
             
             # Resample if needed for Whisper
             if samplerate != WHISPER_TARGET_SAMPLE_RATE:
@@ -540,12 +582,12 @@ wake_detector = wake_word_detector.create_wake_word_detector(
 )
 
 # Initialize periodic identifier
-periodic_identifier = PeriodicIdentifier(
-    tts_engine=tts_engine,
-    radio_interface=ril,
-    play_tts_function=play_tts_audio  # Use the fast method
-)
-periodic_identifier.start()
+#periodic_identifier = PeriodicIdentifier(
+#    tts_engine=tts_engine,
+#    radio_interface=ril,
+#    play_tts_function=play_tts_audio  # Use the fast method
+#)
+#periodic_identifier.start()
 
 # Print startup information
 print("🚀 Ham radio AI voice assistant starting up...")
@@ -583,7 +625,8 @@ while True:
             wake_detector=wake_detector,
             speech_recognition_engine=speech_recognition_engine,
             audio_index=audio_index,
-            duration=5 # Listen for 5 seconds for the wake word 
+            wake_word_timeout=5,  # Listen for 5 seconds for the wake word 
+            max_recording_duration=60  # Allow up to 60 seconds of recording
         )
         
         if not wake_detected:
@@ -665,7 +708,7 @@ while True:
                     print(f"🔊 APRS - Speaking directly: {tts_message[:100]}...")
                     context_mgr.add_ai_response_to_context(tts_message) # Add tooling responses to script/context
                     play_tts_audio(tts_message, tts_engine, ril)
-                    periodic_identifier.restart_timer()
+                    #periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
             else:
                 print("🤖 Sending to Ollama...")
@@ -679,7 +722,7 @@ while True:
             # STEP 4: Speak response
             print("🔊 Speaking response...")
             play_tts_audio(ai_response, tts_engine, ril)
-            periodic_identifier.restart_timer()
+            #periodic_identifier.restart_timer()
 
         # Reset audio device after TTS for next recording cycle
         ril.reset_audio_device()            
@@ -692,6 +735,6 @@ while True:
 
 ### SHUTDOWN ###
 
-periodic_identifier.stop() # Stop periodic identification
+#periodic_identifier.stop() # Stop periodic identification
 ril.close() # Close the RIL (which closes serial conn)
 print("🏁 Ham Radio AI Assistant shutdown complete.")
