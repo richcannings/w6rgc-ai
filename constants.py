@@ -22,8 +22,6 @@
 # limitations under the License.
 #
 
-from datetime import datetime
-
 # ============================================================================
 # Prompt / Chatbot Constants
 # ============================================================================
@@ -139,10 +137,7 @@ DEFAULT_TTS_ENGINE = TTS_ENGINE_PIPER  # Options: "coqui" or "piper"
 WRITE_SCRIPT_TO_FILE = False
 
 # Generate timestamped script file path
-_now = datetime.now()
-_time_str = _now.strftime("%H-%M-%S")
-_date_str = _now.strftime("%Y-%m-%d")
-SCRIPT_FILE_PATH = f"chatbot-script-{_date_str}-{_time_str}.log"
+SCRIPT_FILE_PATH = f"chatbot-script.log"
 
 # Coqui TTS Model Options
 TTS_MODEL_FAST_PITCH = "tts_models/en/ljspeech/fast_pitch"
