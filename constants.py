@@ -111,6 +111,14 @@ DEFAULT_WAKE_WORD_METHOD = WAKE_WORD_METHOD_AST
 # Internet Connectivity and LLM Selection
 HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
 
+# Intelligence Engine Selection
+LLM_ENGINE_AUTO = "auto"
+LLM_ENGINE_GEMINI = "gemini"
+LLM_ENGINE_OLLAMA = "ollama"
+LLM_ENGINE_OPENCLAW = "openclaw"
+# LLM_ENGINE = LLM_ENGINE_AUTO  # Options: auto, gemini, ollama, openclaw
+LLM_ENGINE = LLM_ENGINE_AUTO # Options: auto, gemini, ollama, openclaw
+
 # Ollama Configuration (offline)
 OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_OFFLINE_MODEL = "gemma3:12b"  # Alternative: "gemma3:4b"
@@ -122,6 +130,11 @@ DEFAULT_ONLINE_MODEL = "gemini-3-flash-preview"  # Latest Gemini 3 Flash (previe
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
+
+# OpenClaw Configuration (local gateway)
+OPENCLAW_GATEWAY_URL = "http://localhost:18789"
+OPENCLAW_TOKEN_FILE = "openclaw_api_token.txt"
+OPENCLAW_AGENT_ID = "main"
 
 
 # ============================================================================

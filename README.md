@@ -186,6 +186,7 @@ The application uses a centralized configuration system in `constants.py`. Key s
 ```python
 # Internet Connectivity and LLM Selection
 HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
+LLM_ENGINE = "auto"  # Options: auto, gemini, ollama, openclaw
 
 # Ollama Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -197,6 +198,11 @@ DEFAULT_ONLINE_MODEL = "gemini-3-flash-preview" # Example: "gemini-3-pro-preview
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
+
+# OpenClaw Configuration (local gateway)
+OPENCLAW_GATEWAY_URL = "http://localhost:18789"
+OPENCLAW_TOKEN_FILE = "openclaw_api_token.txt"
+OPENCLAW_AGENT_ID = "main"
 
 # Weather API Configuration (for weather function calling)
 WEATHER_API_KEY_FILE = "weather_api_key.txt"  # Store your OpenWeatherMap API key here

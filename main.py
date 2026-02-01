@@ -77,6 +77,7 @@ from ril_digirig import RadioInterfaceLayerDigiRig
 from periodically_identify import PeriodicIdentifier
 from llm_gemini_online import ask_gemini
 from llm_ollama_offline import ask_ollama
+from llm_openclaw_local import ask_openclaw
 from piper_tts_wrapper import PiperTTSWrapper
 from audio_level_monitor import AudioLevelMonitor
 
@@ -91,13 +92,18 @@ from constants import (
     WHISPER_MODEL,
     AUDIO_THRESHOLD,
     FRAME_DURATION,
-    SILENCE_DURATION,
     WHISPER_TARGET_SAMPLE_RATE,
     
     # AI/LLM configuration
     HAS_INTERNET,
+    LLM_ENGINE,
+    LLM_ENGINE_AUTO,
+    LLM_ENGINE_GEMINI,
+    LLM_ENGINE_OLLAMA,
+    LLM_ENGINE_OPENCLAW,
     DEFAULT_OFFLINE_MODEL,
     DEFAULT_ONLINE_MODEL,
+    OPENCLAW_AGENT_ID,
     
     # TTS configuration
     DEFAULT_TTS_ENGINE,
@@ -601,8 +607,14 @@ wake_detector = wake_word_detector.create_wake_word_detector(
 print("🚀 Ham radio AI voice assistant starting up...")
 print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')")
 print(f"Speech recognition: Whisper model: {WHISPER_MODEL}")
-if HAS_INTERNET:
+startup_engine = LLM_ENGINE
+if startup_engine == LLM_ENGINE_AUTO:
+    startup_engine = LLM_ENGINE_GEMINI if HAS_INTERNET else LLM_ENGINE_OLLAMA
+
+if startup_engine == LLM_ENGINE_GEMINI:
     print(f"AI model: {DEFAULT_ONLINE_MODEL} (online)")
+elif startup_engine == LLM_ENGINE_OPENCLAW:
+    print(f"AI model: OpenClaw agent {OPENCLAW_AGENT_ID} (local)")
 else:
     print(f"AI model: {DEFAULT_OFFLINE_MODEL} (offline)")
 print(f"Text-to-speech: {tts_engine.model_name}")
@@ -676,12 +688,22 @@ while True:
             break
         elif command_type == "status":
             print("⚙️ Status command identified by main.py.")
-            if HAS_INTERNET:
+            if LLM_ENGINE == LLM_ENGINE_AUTO:
+                if HAS_INTERNET:
+                    llm_info = f"{DEFAULT_ONLINE_MODEL} online large language model"
+                    internet_info = "I am connected to the internet."
+                else:
+                    llm_info = f"the {DEFAULT_OFFLINE_MODEL} offline large language model"
+                    internet_info = "I am not connected to the internet."
+            elif LLM_ENGINE == LLM_ENGINE_GEMINI:
                 llm_info = f"{DEFAULT_ONLINE_MODEL} online large language model"
                 internet_info = "I am connected to the internet."
-            else:
+            elif LLM_ENGINE == LLM_ENGINE_OLLAMA:
                 llm_info = f"the {DEFAULT_OFFLINE_MODEL} offline large language model"
                 internet_info = "I am not connected to the internet."
+            else:
+                llm_info = f"the OpenClaw agent {OPENCLAW_AGENT_ID}"
+                internet_info = "I am connected to the local OpenClaw gateway."
 
             status_report = f"""I am {BOT_NAME}. All systems are go. {internet_info} I use:
                 {llm_info} for intelligence, 
@@ -703,9 +725,13 @@ while True:
             # Add the operator's request to the context
             current_prompt = context_mgr.add_operator_request_to_context(operator_text)
             
-            # Choose LLM based on internet availability
+            # Choose LLM based on engine selection
             # TODO(richc): Decide which LLM to during initialization
-            if HAS_INTERNET:
+            selected_engine = LLM_ENGINE
+            if selected_engine == LLM_ENGINE_AUTO:
+                selected_engine = LLM_ENGINE_GEMINI if HAS_INTERNET else LLM_ENGINE_OLLAMA
+
+            if selected_engine == LLM_ENGINE_GEMINI:
                 print("🤖 Sending to Gemini...")
                 print(f"Current prompt: {current_prompt}")
                 ai_response = ask_gemini(current_prompt)
@@ -719,6 +745,11 @@ while True:
                     play_tts_audio(tts_message, tts_engine, ril)
                     #periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
+            elif selected_engine == LLM_ENGINE_OPENCLAW:
+                print("🤖 Sending to OpenClaw...")
+                print(f"Current prompt: {current_prompt}")
+                ai_response = ask_openclaw(current_prompt)
+                print(f"🤖 OpenClaw replied: {ai_response}")
             else:
                 print("🤖 Sending to Ollama...")
                 print(f"Current prompt: {current_prompt}")
