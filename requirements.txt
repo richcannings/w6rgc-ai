@@ -10,7 +10,7 @@ pyserial
 transformers
 torch
 librosa
-google-generativeai
+google-genai
 beautifulsoup4
 pytz
 piper-tts

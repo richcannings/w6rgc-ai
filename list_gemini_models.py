@@ -9,7 +9,7 @@
 #   python list_gemini_models.py
 #
 # Requirements:
-#  - google-generativeai library (pip install google-generativeai)
+#  - google-genai library (pip install google-genai)
 #  - Valid Google AI API key in gemini_api_key.txt
 #  - Internet connection for API access
 #
@@ -29,8 +29,12 @@
 # limitations under the License.
 
 import os
-import sys
-import google.generativeai as genai
+try:
+    from google import genai
+except ImportError as exc:
+    raise ImportError(
+        "google-genai is required. Install it with `pip install google-genai`."
+    ) from exc
 from constants import (
     GEMINI_API_KEY_FILE,
     DEFAULT_ONLINE_MODEL
@@ -65,12 +69,12 @@ def list_gemini_models():
         return False
     
     try:
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
         print("🔗 Connected to Google AI API successfully!")
         print("=" * 60)
         
         # Get list of models
-        models = list(genai.list_models())
+        models = list(client.models.list())
         
         if not models:
             print("⚠️  No models found")
@@ -84,7 +88,9 @@ def list_gemini_models():
         other_models = []
         
         for model in models:
-            if 'generateContent' in model.supported_generation_methods:
+            supported_actions = getattr(model, 'supported_actions', None) or \
+                getattr(model, 'supported_generation_methods', None) or []
+            if 'generateContent' in supported_actions:
                 text_generation_models.append(model)
             else:
                 other_models.append(model)
@@ -109,7 +115,7 @@ def list_gemini_models():
                     print(f"       Display Name: {display_name}")
                 
                 print(f"       Description: {description}")
-                print(f"       Supported Methods: {', '.join(model.supported_generation_methods)}")
+                print(f"       Supported Methods: {', '.join(supported_actions)}")
                 
                 # Show input/output token limits if available
                 if hasattr(model, 'input_token_limit'):
@@ -127,7 +133,9 @@ def list_gemini_models():
             print("=" * 60)
             for i, model in enumerate(other_models, 1):
                 print(f"   {i:2}. {model.name}")
-                print(f"       Methods: {', '.join(model.supported_generation_methods)}")
+                other_supported_actions = getattr(model, 'supported_actions', None) or \
+                    getattr(model, 'supported_generation_methods', None) or []
+                print(f"       Methods: {', '.join(other_supported_actions)}")
                 print()
         
         # Summary
@@ -152,13 +160,12 @@ def test_model(model_name):
         if not api_key:
             return False
             
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
+        client = genai.Client(api_key=api_key)
         
         print(f"🧪 Testing model: {model_name}")
         test_prompt = "Hello! Please respond with 'Test successful' if you can understand this message."
         
-        response = model.generate_content(test_prompt)
+        response = client.models.generate_content(model=model_name, contents=test_prompt)
         
         if response.text:
             print(f"✅ Test Response: {response.text.strip()}")

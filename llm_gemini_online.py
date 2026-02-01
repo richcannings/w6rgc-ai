@@ -9,7 +9,7 @@
 #  - Direct integration with Google Gemini API
 #  - Automatic API key loading from gemini_api_key.txt
 #  - Error handling and fallback responses
-#  - Configurable model selection (gemini-pro by default)
+#  - Configurable model selection (via DEFAULT_ONLINE_MODEL)
 #  - Response streaming support for real-time applications
 #
 # Usage:
@@ -17,7 +17,7 @@
 #  response = ask_gemini("What is the weather like today?")
 #
 # Requirements:
-#  - google-generativeai library (pip install google-generativeai)
+#  - google-genai library (pip install google-genai)
 #  - Valid Google AI API key in gemini_api_key.txt
 #  - Internet connection for API access
 #
@@ -37,8 +37,13 @@
 # limitations under the License.
 
 import os
-import google.generativeai as genai
-from google.generativeai.types import FunctionDeclaration, Tool
+try:
+    from google import genai
+    from google.genai import types
+except ImportError as exc:
+    raise ImportError(
+        "google-genai is required. Install it with `pip install google-genai`."
+    ) from exc
 from typing import Optional, Dict, Any
 import time
 
@@ -87,7 +92,7 @@ def load_api_key() -> str:
             raise
         raise GeminiAPIError(f"Error reading API key file: {e}")
 
-def initialize_gemini() -> genai.GenerativeModel:
+def initialize_gemini() -> genai.Client:
     """
     Initialize the Gemini API client with the API key.
     
@@ -99,18 +104,15 @@ def initialize_gemini() -> genai.GenerativeModel:
     """
     try:
         api_key = load_api_key()
-        genai.configure(api_key=api_key)
-        
-        # Create and return the model instance
-        model = genai.GenerativeModel(DEFAULT_ONLINE_MODEL)
-        return model
+        # Create and return the API client
+        return genai.Client(api_key=api_key)
     except Exception as e:
         if isinstance(e, GeminiAPIError):
             raise
         raise GeminiAPIError(f"Failed to initialize Gemini API: {e}")
 
 # Define the APRS tool at the module level
-get_operator_aprs_messages_func = FunctionDeclaration(
+get_operator_aprs_messages_func = types.FunctionDeclaration(
     name="get_operator_aprs_messages",
     description=(
         "Retrieves the latest received APRS messages for a specific operator's callsign. "
@@ -132,7 +134,7 @@ get_operator_aprs_messages_func = FunctionDeclaration(
 )
 
 # Define the APRS send message tool
-send_aprs_message_func = FunctionDeclaration(
+send_aprs_message_func = types.FunctionDeclaration(
     name="send_aprs_message_for_operator",
     description=(
         "Sends an APRS message from a specified sender to a recipient. "
@@ -162,7 +164,7 @@ send_aprs_message_func = FunctionDeclaration(
 )
 
 # Define the weather tool
-get_weather_forecast_func = FunctionDeclaration(
+get_weather_forecast_func = types.FunctionDeclaration(
     name="get_weather_forecast",
     description=(
         "Gets current weather conditions and 3-day forecast for a specified location. "
@@ -184,7 +186,7 @@ get_weather_forecast_func = FunctionDeclaration(
 )
 
 # Define the time zone tool
-get_timezone_time_func = FunctionDeclaration(
+get_timezone_time_func = types.FunctionDeclaration(
     name="get_timezone_time",
     description=(
         "Gets current time and date for a specified timezone. "
@@ -205,7 +207,7 @@ get_timezone_time_func = FunctionDeclaration(
 )
 
 # Define the Wikipedia tool
-get_wikipedia_summary_func = FunctionDeclaration(
+get_wikipedia_summary_func = types.FunctionDeclaration(
     name="get_wikipedia_summary",
     description=(
         "Fetches a summary of a Wikipedia page for a given topic. "
@@ -225,7 +227,7 @@ get_wikipedia_summary_func = FunctionDeclaration(
 )
 
 # Define the ARRL news tool
-get_arrl_news_func = FunctionDeclaration(
+get_arrl_news_func = types.FunctionDeclaration(
     name="get_arrl_news",
     description=(
         "Fetches and summarizes the latest ARRL news from Amateur Radio Newsline. "
@@ -245,7 +247,7 @@ get_arrl_news_func = FunctionDeclaration(
 )
 
 # Define the GPS tool
-get_gps_coordinates_func = FunctionDeclaration(
+get_gps_coordinates_func = types.FunctionDeclaration(
     name="get_gps_coordinates",
     description=(
         "Gets the GPS coordinates (latitude and longitude) for a given natural language location description. "
@@ -264,7 +266,7 @@ get_gps_coordinates_func = FunctionDeclaration(
 )
 
 # Create the tool with all function declarations
-ai_tools = Tool(function_declarations=[
+ai_tools = types.Tool(function_declarations=[
     get_operator_aprs_messages_func, 
     send_aprs_message_func,
     get_weather_forecast_func,
@@ -297,22 +299,16 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
     # Use default generation config optimized for ham radio assistant
     if generation_config is None:
         generation_config = {
-            'temperature': 0.7,
+            'temperature': 1.0,
             'top_p': 0.8,
             'top_k': 40,
             'max_output_tokens': 1024,
         }
     
     # Initialize model (use custom model name if provided)
-    current_model = None
+    current_client = None
     try:
-        if model_name and model_name != DEFAULT_ONLINE_MODEL:
-            # Ensure API key is configured for this model instance
-            # genai.configure is global, load_api_key ensures it's called if needed.
-            load_api_key() 
-            current_model = genai.GenerativeModel(model_name)
-        else:
-            current_model = initialize_gemini() # Gets/initializes default model
+        current_client = initialize_gemini()
     except Exception as e:
         # Wrap model initialization errors
         raise GeminiAPIError(f"Model initialization failed: {e}")
@@ -324,10 +320,24 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
             print(f"🤖 Sending prompt to Gemini (attempt {attempt + 1}/{MAX_RETRIES})...")
             
             # Generate response, including the AI tools
-            response = current_model.generate_content(
-                prompt, # User's initial prompt as a string
-                generation_config=generation_config,
-                tools=[ai_tools] 
+            current_model_name = model_name if model_name else DEFAULT_ONLINE_MODEL
+            config_kwargs = {
+                'temperature': 1.0,
+                'top_p': 0.8,
+                'top_k': 40,
+                'max_output_tokens': 1024,
+            }
+            if generation_config:
+                config_kwargs.update(generation_config)
+
+            response = current_client.models.generate_content(
+                model=current_model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    **config_kwargs,
+                    tools=[ai_tools],
+                    automatic_function_calling={'disable': True}
+                )
             )
             
             # Check for function call in the response
@@ -501,9 +511,20 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                         return f"An error occurred while trying to get GPS coordinates for {location_description}: {str(e)}"
             
             # If no function call was made, or it wasn't the one we handle, proceed with normal text response
+            response_text = ""
             if hasattr(response, 'text') and response.text:
-                print(f"✅ Received direct response from Gemini ({len(response.text)} characters)")
-                return response.text.strip()
+                response_text = response.text.strip()
+            else:
+                # Some SDK responses don't populate .text; extract from parts
+                if response.candidates and response.candidates[0].content:
+                    parts = response.candidates[0].content.parts or []
+                    response_text = "".join(
+                        [part.text for part in parts if hasattr(part, 'text') and part.text]
+                    ).strip()
+
+            if response_text:
+                print(f"✅ Received direct response from Gemini ({len(response_text)} characters)")
+                return response_text
             
             # If no text and no function call we handled, check for blocking or empty response
             block_reason_msg = ""
@@ -514,8 +535,9 @@ def ask_gemini(prompt: str, model_name: Optional[str] = None,
                 block_reason_msg = f"Response blocked: {response.prompt_feedback.block_reason}"
                 raise GeminiAPIError(block_reason_msg) # Will be caught and retried
             else:
-                # This error will be caught by the outer except and retried or raised
-                raise GeminiAPIError("Empty response received from Gemini (no text, no function call, or unhandled function call)")
+                # If the API returned no text or function call, avoid retry storms.
+                print("⚠️  Gemini returned an empty response without a function call.")
+                return ""
             
         except Exception as e:
             last_error = e # Store the exception
@@ -564,7 +586,7 @@ def ask_gemini_streaming(prompt: str, model_name: Optional[str] = None,
     # Use default generation config optimized for ham radio assistant
     if generation_config is None:
         generation_config = {
-            'temperature': 0.7,
+            'temperature': 1.0,
             'top_p': 0.8,
             'top_k': 40,
             'max_output_tokens': 1024,
@@ -572,12 +594,7 @@ def ask_gemini_streaming(prompt: str, model_name: Optional[str] = None,
     
     # Initialize model
     try:
-        if model_name and model_name != DEFAULT_ONLINE_MODEL:
-            api_key = load_api_key()
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(model_name)
-        else:
-            model = initialize_gemini()
+        current_client = initialize_gemini()
     except Exception as e:
         raise GeminiAPIError(f"Model initialization failed: {e}")
     
@@ -585,10 +602,23 @@ def ask_gemini_streaming(prompt: str, model_name: Optional[str] = None,
         print(f"🤖 Starting streaming response from Gemini...")
         
         # Generate streaming response
-        response = model.generate_content(
-            prompt,
-            generation_config=generation_config,
-            stream=True
+        current_model_name = model_name if model_name else DEFAULT_ONLINE_MODEL
+        config_kwargs = {
+            'temperature': 1.0,
+            'top_p': 0.8,
+            'top_k': 40,
+            'max_output_tokens': 1024,
+        }
+        if generation_config:
+            config_kwargs.update(generation_config)
+
+        response = current_client.models.generate_content_stream(
+            model=current_model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                **config_kwargs,
+                automatic_function_calling={'disable': True}
+            )
         )
         
         for chunk in response:
@@ -620,12 +650,12 @@ def list_available_models() -> list:
         list: List of available model names
     """
     try:
-        api_key = load_api_key()
-        genai.configure(api_key=api_key)
-        
+        current_client = initialize_gemini()
         models = []
-        for model in genai.list_models():
-            if 'generateContent' in model.supported_generation_methods:
+        for model in current_client.models.list():
+            supported_actions = getattr(model, 'supported_actions', None) or \
+                getattr(model, 'supported_generation_methods', None) or []
+            if 'generateContent' in supported_actions:
                 models.append(model.name)
         
         return models

@@ -193,7 +193,7 @@ DEFAULT_OFFLINE_MODEL = "gemma2:9b"  # Example: "llama3:8b"
 
 # Gemini Configuration
 GEMINI_API_KEY_FILE = "gemini_api_key.txt"  # Store your Gemini API key in this file
-DEFAULT_ONLINE_MODEL = "models/gemini-1.5-flash-preview-0514" # Example: "gemini-1.5-pro"
+DEFAULT_ONLINE_MODEL = "gemini-3-flash-preview" # Example: "gemini-3-pro-preview"
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
