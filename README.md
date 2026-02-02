@@ -1,11 +1,10 @@
-# W6RGC/AI: AI amateur radio operator and voice assistant
-AI is changing everything. [7?](https://en.wikipedia.org/wiki/Wire_signal) Are you ready?
+# W6RGC/AI: Voice-to-LLM bridge for ham radio
 
 ## Overview
 
-W6RGC/AI brings the power of modern artificial intelligence to amateur radio through an AI ham operator and voice assistant named "Seven." It acts as an AI co-pilot, designed to work both on and off the internet, turning your radio into a direct interface for advanced capabilities. Activate Seven with its name, then speak as you would to another operator, like "Seven. This is W6RGC. Lets do a QSO." or "Seven. What are you good at?"
+W6RGC/AI is a voice-to-LLM bridge for ham radio that allows operators to communicate with AI chatbots using FM phone. It acts as an AI co-pilot named "Seven," designed to work both on and off the internet. Activate Seven with its name, then speak as you would to another operator, like "Seven. This is W6RGC. Lets do a QSO." or "Seven. What are you good at?"
 
-The project is designed for two main groups: radio operators who want to experiment with an intelligent assistant on the air and developers who want a platform to experiment with AI and radio hardware.
+The project is designed for two main groups: radio operators who want to experiment with an intelligent assistant on the air and developers who want a platform to experiment with radios and AI, especially LLMs, tooling, voice recognition, and text to speech.
 
 ### For the Radio Operator: An AI Co-Pilot
 
@@ -24,12 +23,14 @@ With natural voice commands, you can also access a growing set of internet-conne
 *   **Weather Reports:** Get current conditions and forecasts for any location.
 *   **Time and date:** Get the current time for any timezone
 
+OpenClaw bridging connects the operator to an autonomous AI personal assistant that can invoke tools on your machine, subject to its configured policy. This makes it possible to route voice commands to local workflows without relying on external services. 
+
 ### For the Developer and Tinkerer: A Modular AI Playground
 
-This project is an open framework for experimenting with AI in real-world communication systems. It's built to be modified and extended.
+This project is an open framework for experimenting with voice-to-LLM pipelines in real-world communication systems. It's built to be modified and extended.
 
 *   **Modular Architecture:** Easily swap core components like AI models, prompts, and hardware interfaces.
-*   **Flexible LLM Support:** Switch between online models like Google's Gemini for powerful, feature-rich operation and offline models via Ollama (e.g., Gemma, Llama 3) for grid-down or private use.
+*   **Flexible LLM Support:** Route voice to OpenClaw (local gateway), Google's Gemini (online), or offline models via Ollama (e.g., Gemma, Llama 3) for grid-down or private use.
 *   **Extensible Tooling:** Add new voice-activated functions. The code provides clear examples for creating your own tools, whether through function-calling or regular expressions.
 *   **Open Source AI Stack:** The pipeline uses a combination of accessible models, including MIT-AST for wake-word detection, OpenAI Whisper for speech-to-text, and Piper TTS for natural speech generation.
 *   **Hardware Integration:** Includes out-of-the-box support for popular Digirig and AIOC radio interfaces.
@@ -66,9 +67,10 @@ W6RGC/AI explores and leverages the following AI models in concert:
     -   You can choose from over 35 other options
 2.  **AI-based speech-to-text**
     - Uses [OpenAI Whisper](https://github.com/openai/whisper) speech recognition
-3.  **Modular LLMs for the brains of the operation** 
-    - The current default uses the online [Gemini](https://gemini.google.com/) "[gemini-1.5-flash-preview-0514](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/1-5-flash)" model and requires a developer key
-    - A one-line change (`HAS_INTERNET`) switches to an offline [Ollama](https://ollama.com/) model, like "[gemma2:9b](https://ollama.com/library/gemma2)"
+3.  **Modular LLMs for the brains of the operation**
+    - Route to a local [OpenClaw](https://docs.clawd.bot/) gateway for agent workflows and local control
+    - Use online [Gemini](https://gemini.google.com/) models with a developer key
+    - Use offline [Ollama](https://ollama.com/) models, like "[gemma3:12b](https://ollama.com/library/gemma3)"
     - Plug in your own models and prompts!
 4.  **Ham radio prompts**. Example prompts for:
     - Performing QSOs
@@ -99,6 +101,7 @@ The code is designed for modularity, making it easy to swap and compare AI model
 - **`speech_recognition.py`**: Whisper-based speech-to-text processing
 - **`llm_gemini_online.py`**: Integrates with the Google Gemini API, including function calling
 - **`llm_ollama_offline.py`**: Manages local LLM integration with Ollama for offline operation
+- **`llm_openclaw_local.py`**: Integrates with a local OpenClaw Gateway (OpenAI-compatible)
 
 ## Setup and Installation
 

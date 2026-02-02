@@ -577,7 +577,8 @@ except Exception as e:
     exit()
 
 # Initialize ContextManager
-context_mgr = ContextManager() # Initialize the context manager
+model_tracks_context = LLM_ENGINE == LLM_ENGINE_OPENCLAW
+context_mgr = ContextManager(model_tracks_context=model_tracks_context)
 
 # Initialize Whisper voice recognition
 speech_recognition_engine = SpeechRecognitionEngine(ril)

@@ -54,7 +54,7 @@ SERIAL_TIMEOUT = 1  # seconds
 # ============================================================================
 
 # Speech Recognition Model
-WHISPER_MODEL = "large-v3"  # Whisper model size to use. Default is "small" or "small.en". "medium.en" or "large-v3" work well.
+WHISPER_MODEL = "medium.en"  # Whisper model size to use. Default is "small" or "small.en". "medium.en" or "large-v3" work well.
 
 # Audio Sample Rates
 WHISPER_TARGET_SAMPLE_RATE = 16000  # Whisper expects 16kHz
@@ -117,7 +117,7 @@ LLM_ENGINE_GEMINI = "gemini"
 LLM_ENGINE_OLLAMA = "ollama"
 LLM_ENGINE_OPENCLAW = "openclaw"
 # LLM_ENGINE = LLM_ENGINE_AUTO  # Options: auto, gemini, ollama, openclaw
-LLM_ENGINE = LLM_ENGINE_AUTO # Options: auto, gemini, ollama, openclaw
+LLM_ENGINE = "openclaw" # Options: auto, gemini, ollama, openclaw
 
 # Ollama Configuration (offline)
 OLLAMA_URL = "http://localhost:11434/api/generate"
