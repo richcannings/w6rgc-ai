@@ -2,40 +2,18 @@
 
 ## Overview
 
-W6RGC/AI is a voice-to-LLM bridge for ham radio that allows operators to communicate with AI chatbots using FM phone. It acts as an AI co-pilot named "Seven," designed to work both on and off the internet. Activate Seven with its name, then speak as you would to another operator, like "Seven. This is W6RGC. Lets do a QSO." or "Seven. What are you good at?"
+W6RGC/AI is a voice-to-LLM bridge for ham radio. It lets operators talk to an AI over the air, routing voice to and from a configurable text-based intelligence engine (OpenClaw, Gemini, or Ollama). Like Siri or Google Assistant, activate using its hotword "Seven", then speak as you would to another operator, like speak "Seven: Send an APRS message to W6RGC."
 
-The project is designed for two main groups: radio operators who want to experiment with an intelligent assistant on the air and developers who want a platform to experiment with radios and AI, especially LLMs, tooling, voice recognition, and text to speech.
+## Killer Features
 
-### For the Radio Operator: An AI Co-Pilot
-
-Seven is trained on standard radio procedures to be a capable and helpful partner on the airwaves. It can:
-
-*   **Handle QSOs:** Manage exchanges of call signs, names, locations, and signal reports.
-*   **Run Nets:** Serve as a net control station for simple nets, handling check-ins and maintaining a participant list.
-*   **Assist with ARES/RACES:** Transcribe and confirm messages using the FEMA ICS-213 format.
-
-With natural voice commands, you can also access a growing set of internet-connected tools:
-
-*   **Voice APRS:** Send and receive APRS messages just by talking.
-*   **ARRL News:** Get the latest amateur radio news headlines from ARNewsline.
-*   **Location identification:** Find a Maidenhead grid square and GPS coordinates for a location you describe.
-*   **Wikipedia Search:** Ask for a summary of any Wikipedia article.
-*   **Weather Reports:** Get current conditions and forecasts for any location.
-*   **Time and date:** Get the current time for any timezone
-
-OpenClaw bridging connects the operator to an autonomous AI personal assistant that can invoke tools on your machine, subject to its configured policy. This makes it possible to route voice commands to local workflows without relying on external services. 
-
-### For the Developer and Tinkerer: A Modular AI Playground
-
-This project is an open framework for experimenting with voice-to-LLM pipelines in real-world communication systems. It's built to be modified and extended.
-
-*   **Modular Architecture:** Easily swap core components like AI models, prompts, and hardware interfaces.
-*   **Flexible LLM Support:** Route voice to OpenClaw (local gateway), Google's Gemini (online), or offline models via Ollama (e.g., Gemma, Llama 3) for grid-down or private use.
-*   **Extensible Tooling:** Add new voice-activated functions. The code provides clear examples for creating your own tools, whether through function-calling or regular expressions.
-*   **Open Source AI Stack:** The pipeline uses a combination of accessible models, including MIT-AST for wake-word detection, OpenAI Whisper for speech-to-text, and Piper TTS for natural speech generation.
-*   **Hardware Integration:** Includes out-of-the-box support for popular Digirig and AIOC radio interfaces.
-
-Whether you are an emergency communicator exploring new tools or a developer curious about the intersection of AI and radio, W6RGC/AI offers a platform to learn, build, and innovate.
+*   **Radio-first UX:** Wake word detection, PTT management, carrier sense, and periodic ID support.
+*   **Multi-engine LLM routing:** OpenClaw (local gateway), Gemini (online), or Ollama (offline).
+*   **Local tool execution:** OpenClaw can invoke tools on your machine, subject to policy.
+    - **Voice APRS:** Send and receive APRS messages by voice.
+    - **Voice-based location services:** Describe your location to get a grid square and GPS.
+    - **Wikipedia:** Ask for a concise summary of any topic.
+    - And more. Just ask Seven.
+*   **Multiple Hardware Interfaces:** [DigiRig](https://digirig.net/) and [Baofeng All-in-One Connector (AIOC)](https://skuep.github.io/AIOC/).
 
 ## Voice APRS Demo
 
@@ -57,51 +35,22 @@ Voice APRS demonstrates the natural language APRS capabilities of W6RGC/AI, allo
 - Supports both sending and receiving messages
 - Phonetic readback of callsigns and messages
 
-## Design
-
-W6RGC/AI explores and leverages the following AI models in concert:
-
-1.  **AI-based wake word spotting** 
-    - Uses [MIT/AST](https://huggingface.co/MIT/ast-finetuned-speech-commands-v2)
-    -   Listens for "Seven" by default (like "Are you Ready?" in [Western Union 92 codes](https://en.wikipedia.org/wiki/Wire_signal))
-    -   You can choose from over 35 other options
-2.  **AI-based speech-to-text**
-    - Uses [OpenAI Whisper](https://github.com/openai/whisper) speech recognition
-3.  **Modular LLMs for the brains of the operation**
-    - Route to a local [OpenClaw](https://docs.clawd.bot/) gateway for agent workflows and local control
-    - Use online [Gemini](https://gemini.google.com/) models with a developer key
-    - Use offline [Ollama](https://ollama.com/) models, like "[gemma3:12b](https://ollama.com/library/gemma3)"
-    - Plug in your own models and prompts!
-4.  **Ham radio prompts**. Example prompts for:
-    - Performing QSOs
-    - Running nets
-    - Copying FEMA ICS-213 forms
-5.  **AI-based tooling and function calling**
-    - Uses [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling?example=meeting)
-    - Example: "Voice APRS" sends and receives APRS messages using Natural Language Understanding.
-    - A regular expression-based system is also available 
-6.  **AI-based text-to-speech** using [Piper TTS](https://github.com/rhasspy/piper) to give the bot a voice
+## Architecture
 
 ![Architecture Diagram](img/architecture.jpg)
 
-The code is designed for modularity, making it easy to swap and compare AI models, prompts, and function calling. The system is organized into several key modules:
+Key modules you can extend:
 
-- **`main.py`**: Main application entry point and orchestration
-- **`constants.py`**: Centralized configuration for all settings
-- **`regex_command_tooling.py`**: Parses voice commands like status, reset, identify, and terminate
-- **`ril_aioc.py`**: Radio Interface Layer for AIOC hardware
-- **`ril_digirig.py`**: Radio Interface Layer for Digirig hardware
-- **`context_manager.py`**: Manages the AI's persona and conversation history
+- **`main.py`**: Orchestration loop
+- **`constants.py`**: Centralized configuration
+- **`regex_command_tooling.py`**: Voice command parsing
+- **`ril_aioc.py`** / **`ril_digirig.py`**: Radio interface layers
+- **`context_manager.py`**: Prompt + conversation state
 - **`wake_word_detector.py`**: AST-based wake word detection
-- **`periodically_identify.py`**: Handles periodic station identification
-- **`aprs_helper.py`**: Sends and receives APRS messages via findu.com
-- **`arrl_news_helper.py`**: Fetches and summarizes the latest ARRL news from ARNewsline.
-- **`wikipedia_helper.py`**: Fetches article summaries from the Wikipedia API.
-- **`location_helper.py`**: Converts natural language location descriptions to GPS coordinates using the Google Places API.
-- **`speech_recognition.py`**: Whisper-based speech-to-text processing
-- **`llm_gemini_online.py`**: Integrates with the Google Gemini API, including function calling
-- **`llm_ollama_offline.py`**: Manages local LLM integration with Ollama for offline operation
-- **`llm_openclaw_local.py`**: Integrates with a local OpenClaw Gateway (OpenAI-compatible)
+- **`periodically_identify.py`**: Periodic station ID
+- **`aprs_helper.py`**, **`arrl_news_helper.py`**, **`wikipedia_helper.py`**, **`location_helper.py`**: External data helpers
+- **`speech_recognition.py`**: Whisper speech-to-text
+- **`llm_gemini_online.py`**, **`llm_ollama_offline.py`**, **`llm_openclaw_local.py`**: LLM connectors
 
 ## Setup and Installation
 
@@ -142,6 +91,11 @@ The code is designed for modularity, making it easy to swap and compare AI model
     ```bash
     pip install -r requirements.txt
     ```
+4.  **Add API key files (as needed):**
+    *   `gemini_api_key.txt` for Gemini
+    *   `weather_api_key.txt` for weather
+    *   `google_places_api_key.txt` for location services
+    *   `openclaw_api_token.txt` for OpenClaw gateway access
 4.  **Set up Ollama (if not done in prerequisites):**
     *   Ensure the Ollama server is running (usually `ollama serve` or `systemctl start ollama`)
     *   If you haven't already, pull your desired LLM model (e.g., `ollama pull gemma2:9b`)
@@ -173,15 +127,14 @@ Example: "Seven, what are your commands?", "Seven, start a net. You are Net Cont
 
 To terminate the assistant: "Seven, break" or "Seven, exit" or use Ctrl+C in the terminal.
 
-## Wake Word Detection and Changing Wake Word
+## Bot Identity (Wake Word + Callsign)
 
 The system uses MIT's AST (Audio Spectrogram Transformer) model for efficient wake word detection:
 
 - **35+ Available Wake Words:** backward, bed, bird, cat, dog, down, eight, five, follow, forward, four, go, happy, house, learn, left, marvin, nine, no, off, on, one, right, seven, sheila, six, stop, three, tree, two, up, visual, wow, yes, zero
 - **Current Default:** "seven"
-- **High Performance:** Fast, low CPU usage, and high accuracy
 
-To change the wake word, modify `BOT_NAME` and `DEFAULT_WAKE_WORD` in `constants.py` to any of the supported words. It's easier for both the user and the AI when `BOT_NAME` matches the `DEFAULT_WAKE_WORD`.
+To change the wake word, modify `BOT_NAME` and `DEFAULT_WAKE_WORD` in `constants.py` to any of the supported words. It's easier for both the user and the AI when `BOT_NAME` matches the `DEFAULT_WAKE_WORD`. To change the bot's callsign, update `BOT_CALLSIGN`, `BOT_SPOKEN_CALLSIGN`, and `BOT_PHONETIC_CALLSIGN` in `constants.py`.
 
 ## Configuration
 
@@ -279,67 +232,6 @@ TTS_INFERENCE_SIGMA = 1.0
 TTS_OUTPUT_FILE = 'audio/tts_output.wav'
 ```
 
-## Advanced Features
-
-### VoiceAPRS (Function Calling)
-The system includes natural language APRS functionality through Gemini's function calling capabilities:
-
-- **Send APRS Messages**: "Seven, send an APRS message to N0CALL saying hello"
-- **Read APRS Messages**: "Seven, read my APRS messages" (requires your callsign in `constants.py`)
-- **Integration**: Uses findu.com for APRS operations
-- **Requirements**: Internet connection and Gemini API access
-
-### ARRL News (Function Calling)
-Get the latest amateur radio news headlines from ARNewsline.org:
-
-- **Voice Commands**: "Seven, what's the latest ARRL news?" or "Seven, get me the ham radio news"
-- **Features**: Returns the most recent news report with headlines, cached for 5 minutes
-- **Requirements**: Internet connection and Gemini API access
-- **Integration**: Uses ARNewsline.org for current amateur radio news
-
-### Weather Information (Function Calling)
-The system provides comprehensive weather information through natural language voice commands:
-
-- **Current Weather**: "Seven, what's the weather like in San Francisco?"
-- **3-Day Forecast**: "Seven, give me the weather forecast for New York"
-- **Detailed Information**: Includes temperature, conditions, humidity, highs/lows, and precipitation probability
-- **Integration**: Uses OpenWeatherMap API for reliable weather data
-- **Requirements**: Internet connection, Gemini API access, and OpenWeatherMap API key in `weather_api_key.txt`
-
-**Example Voice Commands:**
-- "Seven, what's the weather like in Los Angeles, California?"
-- "Seven, can you give me the 3-day forecast for Chicago?"
-- "Seven, what are the weather conditions in London, England?"
-
-### Time Zone Information (Function Calling)
-The system provides current time and date information for any timezone through natural language voice commands:
-
-- **Current Time**: "Seven, what time is it?" (defaults to Pacific Time)
-- **Specific Timezone**: "Seven, what time is it in Eastern?" or "Seven, what's the time in New York?"
-- **International Time**: "Seven, what time is it in London?" or "Seven, what time is it in Tokyo?"
-- **UTC/GMT Time**: "Seven, what's the current UTC time?"
-- **Format**: Time is returned in 12-hour format without seconds, and the date is returned without the year.
-- **Default**: Automatically defaults to Pacific Time if no timezone is specified.
-
-**Example Voice Commands:**
-- "Seven, what time is it right now?"
-- "Seven, what time is it in Eastern time?"
-- "Seven, can you tell me the time in London?"
-- "Seven, what's the current UTC time?"
-- "Seven, what time is it in Tokyo?"
-
-### Carrier Sense
-Both AIOC and Digirig interfaces include carrier sense functionality:
-- Checks for channel activity before transmitting
-- Configurable duration, retries, and delays
-- Prevents interference with ongoing QSOs
-
-### Periodic Identification  
-Automatic station identification every 10 minutes (configurable):
-- Announces the AI assistant and how to interact with it
-- Complies with FCC Part 97 identification requirements
-- The timer resets after each transmission
-
 ## Troubleshooting
 
 ### Common Issues
@@ -384,29 +276,6 @@ wake_detected = wake_detector.listen_for_wake_word(
 *   **Minimum:** CPU with 4+ cores, 32GB RAM, and 10GB disk space (not including Ollama models)
 *   **GPU with CUDA support:** NVIDIA RTX 3060 with 12GB RAM recommended for optimal performance
 *   **Radio interface:** Digirig, AIOC (All-In-One-Cable), or other compatible USB audio interface with PTT control
-
-## Testing and Development
-
-The project includes several testing utilities:
-
-- **Wake word testing**: Use the built-in debug modes in the wake word detector.
-- **Module testing**: Each module includes a `if __name__ == "__main__"` block for direct testing.  
-- **Command testing**: Test voice command recognition with `regex_command_tooling.py`.
-
-To test individual components:
-```bash
-python ril_aioc.py                    # Test AIOC hardware interface
-python ril_digirig.py                 # Test Digirig hardware interface
-python wake_word_detector.py          # Test wake word detection
-python regex_command_tooling.py       # Test command identification
-python periodically_identify.py       # Test periodic identification
-python list_gemini_models.py          # List available Gemini models and test API access
-python weather_helper.py              # Test weather API functionality
-python test_weather_integration.py    # Test weather integration with Gemini
-python time_helper.py                 # Test time zone functionality
-python test_time_integration.py       # Test time zone integration with Gemini
-python test_arrl_news.py              # Test ARRL news functionality
-```
 
 ## License
 
