@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# llm_ollama_offline.py - Ollama Local LLM Integration
+# llm_ollama.py - Ollama Local LLM Integration
 #
 # This module provides integration with local Ollama LLM instances for the 
 # W6RGC/AI Ham Radio Voice Assistant. It offers offline AI capabilities
@@ -23,6 +23,8 @@
 import json
 import requests
 from constants import DEFAULT_OFFLINE_MODEL, OLLAMA_URL
+
+requires_internet = False
 
 def convert_ollama_response(response_text):
     """

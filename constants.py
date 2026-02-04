@@ -108,16 +108,12 @@ DEFAULT_WAKE_WORD_METHOD = WAKE_WORD_METHOD_AST
 # Intelligence Engine (LLM) Configuration
 # ============================================================================
 
-# Internet Connectivity and LLM Selection
-HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
-
 # Intelligence Engine Selection
-LLM_ENGINE_AUTO = "auto"
 LLM_ENGINE_GEMINI = "gemini"
 LLM_ENGINE_OLLAMA = "ollama"
 LLM_ENGINE_OPENCLAW = "openclaw"
-# LLM_ENGINE = LLM_ENGINE_AUTO  # Options: auto, gemini, ollama, openclaw
-LLM_ENGINE = "openclaw" # Options: auto, gemini, ollama, openclaw
+# LLM_ENGINE = LLM_ENGINE_GEMINI  # Options: gemini, ollama, openclaw
+LLM_ENGINE = "gemini" # Options: gemini, ollama, openclaw
 
 # Ollama Configuration (offline)
 OLLAMA_URL = "http://localhost:11434/api/generate"

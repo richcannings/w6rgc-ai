@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# llm_openclaw_local.py - OpenClaw Local Gateway Integration
+# llm_openclaw.py - OpenClaw Local Gateway Integration
 #
 # This module provides integration with a local OpenClaw Gateway using its
 # OpenAI-compatible Chat Completions endpoint.
@@ -35,6 +35,8 @@ from constants import (
 class OpenClawAPIError(Exception):
     """Custom exception for OpenClaw API related errors."""
     pass
+
+requires_internet = False
 
 
 def load_openclaw_token() -> str:

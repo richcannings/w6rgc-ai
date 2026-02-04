@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# llm_gemini_online.py - Google Gemini API Integration
+# llm_gemini.py - Google Gemini API Integration
 #
 # This module provides integration with Google's Gemini API for the W6RGC/AI 
 # Ham Radio Voice Assistant. It offers an alternative to the local Ollama LLM
@@ -13,7 +13,7 @@
 #  - Response streaming support for real-time applications
 #
 # Usage:
-#  from llm_gemini_online import ask_gemini
+#  from llm_gemini import ask_gemini
 #  response = ask_gemini("What is the weather like today?")
 #
 # Requirements:
@@ -65,6 +65,8 @@ from arrl_news_helper import get_arrl_news_summary
 class GeminiAPIError(Exception):
     """Custom exception for Gemini API related errors."""
     pass
+
+requires_internet = True
 
 def load_api_key() -> str:
     """

@@ -2,18 +2,20 @@
 
 ## Overview
 
-W6RGC/AI is a voice-to-LLM bridge for ham radio. It lets operators talk to an AI over the air, routing voice to and from a configurable text-based intelligence engine (OpenClaw, Gemini, or Ollama). Like Siri or Google Assistant, activate using its hotword "Seven", then speak as you would to another operator, like speak "Seven: Send an APRS message to W6RGC."
+W6RGC/AI is a voice-to-LLM bridge for ham radio. It lets operators talk to AI over the air, routing voice to and from a configurable text-based intelligence engine (OpenClaw, Gemini, ChatGPT, or Ollama). Like Siri or Google Assistant, activate using its hotword "Seven", then speak as you would to another operator, like speak "Seven: Send an APRS message to W6RGC."
 
 ## Killer Features
 
 *   **Radio-first UX:** Wake word detection, PTT management, carrier sense, and periodic ID support.
-*   **Multi-engine LLM routing:** OpenClaw (local gateway), Gemini (online), or Ollama (offline).
-*   **Local tool execution:** OpenClaw can invoke tools on your machine, subject to policy.
-    - **Voice APRS:** Send and receive APRS messages by voice.
+*   **Multi-engine LLM routing:** OpenClaw, Gemini, ChatGPT, or Ollama.
+*   **Local tool execution:** 
+    - **OpenClaw:** Invoke tools on your machine, subject to policy.
+    - **Voice APRS:** Send and receive APRS messages by voice
     - **Voice-based location services:** Describe your location to get a grid square and GPS.
     - **Wikipedia:** Ask for a concise summary of any topic.
     - And more. Just ask Seven.
 *   **Multiple Hardware Interfaces:** [DigiRig](https://digirig.net/) and [Baofeng All-in-One Connector (AIOC)](https://skuep.github.io/AIOC/).
+*   **Off grid:** Configurable to run completely on local models for all AI operations (main LLM, wake word detection, speech recognition, and text-to-speech)
 
 ## Voice APRS Demo
 
@@ -50,7 +52,7 @@ Key modules you can extend:
 - **`periodically_identify.py`**: Periodic station ID
 - **`aprs_helper.py`**, **`arrl_news_helper.py`**, **`wikipedia_helper.py`**, **`location_helper.py`**: External data helpers
 - **`speech_recognition.py`**: Whisper speech-to-text
-- **`llm_gemini_online.py`**, **`llm_ollama_offline.py`**, **`llm_openclaw_local.py`**: LLM connectors
+- **`llm_gemini.py`**, **`llm_ollama.py`**, **`llm_openclaw.py`**: LLM connectors
 
 ## Setup and Installation
 
@@ -140,9 +142,8 @@ To change the wake word, modify `BOT_NAME` and `DEFAULT_WAKE_WORD` in `constants
 
 The application uses a centralized configuration system in `constants.py`. Key sections include:
 ```python
-# Internet Connectivity and LLM Selection
-HAS_INTERNET = True  # Set to True for Gemini (online), False for Ollama (offline)
-LLM_ENGINE = "auto"  # Options: auto, gemini, ollama, openclaw
+# LLM Selection
+LLM_ENGINE = "openclaw"  # Options: gemini, ollama, openclaw
 
 # Ollama Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"

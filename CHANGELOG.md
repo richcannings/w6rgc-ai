@@ -7,7 +7,7 @@ All notable changes to the W6RGC-AI off grid ham radio AI voice assistant projec
 ### Added
 - **VoiceAPRS Functionality**:
     - Integrated APRS message sending and receiving capabilities using `aprs_helper.py`.
-    - Added `FunctionDeclaration` and tool integration in `llm_gemini_online.py` for Gemini to understand and execute APRS-related voice commands (send/receive messages).
+    - Added `FunctionDeclaration` and tool integration in `llm_gemini.py` for Gemini to understand and execute APRS-related voice commands (send/receive messages).
     - Operators can now ask the AI to read their APRS messages or send messages to other callsigns using natural language.
     - This feature uses `findu.com` for APRS operations and requires an internet connection.
 - **Digirig Support**: Added support for Digirig radio interface hardware. Includes `ril_digirig.py` for Digirig-specific control and updates to `main.py` and `constants.py` to select and configure Digirig.
