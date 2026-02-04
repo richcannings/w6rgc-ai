@@ -66,6 +66,7 @@ gemini_api_key.txt
 weather_api_key.txt
 google_places_api_key.txt
 openclaw_api_token.txt
+openai_api_key.txt
 
 # Notebooks
 .ipynb_checkpoints

@@ -11,6 +11,7 @@ transformers
 torch
 librosa
 google-genai
+openai
 beautifulsoup4
 pytz
 piper-tts

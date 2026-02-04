@@ -76,6 +76,7 @@ from ril_aioc import RadioInterfaceLayerAIOC
 from ril_digirig import RadioInterfaceLayerDigiRig
 from periodically_identify import PeriodicIdentifier
 from llm_gemini import ask_gemini
+from llm_chatgpt import ask_chatgpt
 from llm_ollama import ask_ollama
 from llm_openclaw import ask_openclaw
 from piper_tts_wrapper import PiperTTSWrapper
@@ -97,10 +98,12 @@ from constants import (
     # AI/LLM configuration
     LLM_ENGINE,
     LLM_ENGINE_GEMINI,
+    LLM_ENGINE_CHATGPT,
     LLM_ENGINE_OLLAMA,
     LLM_ENGINE_OPENCLAW,
     DEFAULT_OFFLINE_MODEL,
     DEFAULT_ONLINE_MODEL,
+    DEFAULT_CHATGPT_MODEL,
     OPENCLAW_AGENT_ID,
     
     # TTS configuration
@@ -608,6 +611,8 @@ print(f"Wake word detector: Ready (AST method, wake word: '{DEFAULT_WAKE_WORD}')
 print(f"Speech recognition: Whisper model: {WHISPER_MODEL}")
 if LLM_ENGINE == LLM_ENGINE_GEMINI:
     print(f"AI model: {DEFAULT_ONLINE_MODEL} (online)")
+elif LLM_ENGINE == LLM_ENGINE_CHATGPT:
+    print(f"AI model: {DEFAULT_CHATGPT_MODEL} (online)")
 elif LLM_ENGINE == LLM_ENGINE_OPENCLAW:
     print(f"AI model: OpenClaw agent {OPENCLAW_AGENT_ID} (local)")
 else:
@@ -686,6 +691,9 @@ while True:
             if LLM_ENGINE == LLM_ENGINE_GEMINI:
                 llm_info = f"{DEFAULT_ONLINE_MODEL} online large language model"
                 internet_info = "I am connected to the internet."
+            elif LLM_ENGINE == LLM_ENGINE_CHATGPT:
+                llm_info = f"{DEFAULT_CHATGPT_MODEL} online large language model"
+                internet_info = "I am connected to the internet."
             elif LLM_ENGINE == LLM_ENGINE_OLLAMA:
                 llm_info = f"the {DEFAULT_OFFLINE_MODEL} offline large language model"
                 internet_info = "I am not connected to the internet."
@@ -732,6 +740,11 @@ while True:
                     play_tts_audio(tts_message, tts_engine, ril)
                     #periodic_identifier.restart_timer()
                     continue # Skip further processing of this response in the main loop
+            elif LLM_ENGINE == LLM_ENGINE_CHATGPT:
+                print("🤖 Sending to ChatGPT...")
+                print(f"Current prompt: {current_prompt}")
+                ai_response = ask_chatgpt(current_prompt)
+                print(f"🤖 ChatGPT replied: {ai_response}")
             elif LLM_ENGINE == LLM_ENGINE_OPENCLAW:
                 print("🤖 Sending to OpenClaw...")
                 print(f"Current prompt: {current_prompt}")

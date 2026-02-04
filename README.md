@@ -94,6 +94,7 @@ Key modules you can extend:
     pip install -r requirements.txt
     ```
 4.  **Add API key files (as needed):**
+    *   `openai_api_key.txt` for ChatGPT
     *   `gemini_api_key.txt` for Gemini
     *   `weather_api_key.txt` for weather
     *   `google_places_api_key.txt` for location services
@@ -143,7 +144,7 @@ To change the wake word, modify `BOT_NAME` and `DEFAULT_WAKE_WORD` in `constants
 The application uses a centralized configuration system in `constants.py`. Key sections include:
 ```python
 # LLM Selection
-LLM_ENGINE = "openclaw"  # Options: gemini, ollama, openclaw
+LLM_ENGINE = "openclaw"  # Options: gemini, chatgpt, ollama, openclaw
 
 # Ollama Configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -155,6 +156,10 @@ DEFAULT_ONLINE_MODEL = "gemini-3-flash-preview" # Example: "gemini-3-pro-preview
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
+
+# ChatGPT Configuration
+OPENAI_API_KEY_FILE = "openai_api_key.txt"
+DEFAULT_CHATGPT_MODEL = "gpt-5.2-pro"
 
 # OpenClaw Configuration (local gateway)
 OPENCLAW_GATEWAY_URL = "http://localhost:18789"
@@ -254,6 +259,7 @@ TTS_OUTPUT_FILE = 'audio/tts_output.wav'
 
 **LLM Connection Issues:**
 - **Ollama**: Ensure the service is running: `systemctl status ollama`
+- **ChatGPT**: Check API key in `openai_api_key.txt`
 - **Gemini**: Check API key in `gemini_api_key.txt`
 - **Models**: Verify model availability: `ollama list` or test with `python list_gemini_models.py`
 

@@ -112,8 +112,9 @@ DEFAULT_WAKE_WORD_METHOD = WAKE_WORD_METHOD_AST
 LLM_ENGINE_GEMINI = "gemini"
 LLM_ENGINE_OLLAMA = "ollama"
 LLM_ENGINE_OPENCLAW = "openclaw"
-# LLM_ENGINE = LLM_ENGINE_GEMINI  # Options: gemini, ollama, openclaw
-LLM_ENGINE = "gemini" # Options: gemini, ollama, openclaw
+LLM_ENGINE_CHATGPT = "chatgpt"
+# LLM_ENGINE = LLM_ENGINE_GEMINI  # Options: gemini, chatgpt, ollama, openclaw
+LLM_ENGINE = "chatgpt" # Options: gemini, chatgpt, ollama, openclaw
 
 # Ollama Configuration (offline)
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -126,6 +127,10 @@ DEFAULT_ONLINE_MODEL = "gemini-3-flash-preview"  # Latest Gemini 3 Flash (previe
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 REQUEST_TIMEOUT = 30  # seconds
+
+# ChatGPT Configuration (online)
+OPENAI_API_KEY_FILE = "openai_api_key.txt"
+DEFAULT_CHATGPT_MODEL = "gpt-5-mini"
 
 # OpenClaw Configuration (local gateway)
 OPENCLAW_GATEWAY_URL = "http://localhost:18789"
