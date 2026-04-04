@@ -1,5 +1,8 @@
 # W6RGC/AI: Voice-to-LLM bridge for ham radio
 
+** DEPRECATED. Use [digirig-openclaw-channel](https://github.com/richcannings/digirig-openclaw-channel) for all this functionality and much more
+**
+
 ## Overview
 
 W6RGC/AI is a voice-to-LLM bridge for ham radio. It lets operators talk to AI over the air, routing voice to and from a configurable text-based intelligence engine (OpenClaw, Gemini, ChatGPT, or Ollama). Like Siri or Google Assistant, activate using its hotword "Seven", then speak as you would to another operator, like speak "Seven: Send an APRS message to W6RGC."
